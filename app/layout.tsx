@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import AppShell from "@/components/navigation/AppShell";
 
 export const metadata: Metadata = {
-  title: "Runner Sports",
-  description: "Sports analytics and tracking platform",
+  title: "Runner Sports & Analytics",
+  description: "Sports intelligence, predictive modeling, and bet tracking by Runner Sports & Analytics LLC.",
 };
 
 export default function RootLayout({
@@ -13,7 +14,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <AppShell>{children}</AppShell>
+      </body>
     </html>
   );
 }
