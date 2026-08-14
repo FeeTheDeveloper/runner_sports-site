@@ -170,6 +170,20 @@ export interface MarketSignal {
   note: string;
 }
 
+export interface MarketMovementSnapshot {
+  id: string;
+  event: string;
+  market: string;
+  sportsbook: string;
+  openingLine: number;
+  currentLine: number;
+  openingPrice: number;
+  currentPrice: number;
+  direction: TrendDirection;
+  capturedAt: string;
+  source: SourceMetadata;
+}
+
 export interface TrackerSummary {
   totalWagers: number;
   wins: number;

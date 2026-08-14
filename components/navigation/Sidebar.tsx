@@ -4,32 +4,28 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { navItems } from "@/components/navigation/nav-items";
 import NavIcon from "@/components/navigation/NavIcon";
+import RunnerLogo from "@/components/brand/RunnerLogo";
 
 export default function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="hidden md:flex md:w-60 md:flex-col md:border-r md:border-border md:bg-surface md:shrink-0">
-      <div className="flex items-center gap-2 px-5 py-5 border-b border-border">
-        <div className="h-8 w-8 rounded-md bg-accent/15 border border-accent/30 flex items-center justify-center text-accent font-mono font-semibold text-sm">
-          R
-        </div>
-        <div className="leading-tight">
-          <p className="text-sm font-semibold tracking-wide text-text">RUNNER</p>
-          <p className="text-[11px] text-text-subtle tracking-wide">SPORTS &amp; ANALYTICS</p>
-        </div>
+    <aside className="hidden md:flex md:w-64 md:flex-col md:border-r md:border-border md:bg-surface/90 md:shrink-0">
+      <div className="px-5 py-5 border-b border-border">
+        <RunnerLogo />
       </div>
 
-      <nav className="flex-1 px-3 py-4 space-y-1">
+      <nav className="flex-1 px-3 py-5 space-y-1" aria-label="Product navigation">
+        <p className="mb-3 px-3 text-[9px] font-semibold uppercase tracking-[0.2em] text-text-subtle">Intelligence workspace</p>
         {navItems.map((item) => {
           const active = pathname === item.href || pathname?.startsWith(`${item.href}/`);
           return (
             <Link
               key={item.href}
               href={item.href}
-              className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
+              className={`flex min-h-11 items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-all ${
                 active
-                  ? "bg-surface-3 text-text border border-border-strong"
+                  ? "bg-accent/10 text-text border border-accent/25 shadow-[inset_3px_0_0_var(--color-accent)]"
                   : "text-text-muted hover:text-text hover:bg-surface-2 border border-transparent"
               }`}
             >

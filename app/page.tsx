@@ -1,71 +1,92 @@
 import Link from "next/link";
-import DataStatusBadge from "@/components/ui/DataStatusBadge";
-import { navItems } from "@/components/navigation/nav-items";
+import Image from "next/image";
+import RunnerLogo from "@/components/brand/RunnerLogo";
 import NavIcon from "@/components/navigation/NavIcon";
 
-const pitch: Record<string, string> = {
-  Dashboard: "One view across today's slate, ranked edges, and tracked performance.",
-  Games: "Matchup intelligence with Runner win-probability projections and key factors.",
-  Props: "Player prop projections, edges, and recent hit rates — filterable by sport and market.",
-  Edge: "The ranked Runner Edge Board — where model probability diverges from the market.",
-  Tracker: "Bet-performance analytics: record, ROI, CLV, and sport-level breakdowns.",
-  Models: "The Runner model registry — versioned, scored, and transparently labeled.",
-};
+const capabilities = [
+  ["Game Intelligence", "Matchups, pricing, and model context organized for fast research.", "calendar"],
+  ["Player Props", "Projection, recent form, matchup context, and market price in one view.", "target"],
+  ["Runner Edge", "Transparent model probability compared directly with implied probability.", "trending"],
+  ["Market Intelligence", "Opening numbers, current prices, and meaningful line movement.", "markets"],
+  ["Bet Tracking", "A structured decision journal built for ROI and closing-line analysis.", "activity"],
+  ["Performance Analytics", "Understand performance by sport, market, model, and time period.", "chart"],
+];
 
 export default function Home() {
   return (
-    <div className="mx-auto max-w-5xl space-y-14 py-6">
-      <section className="text-center space-y-5">
-        <DataStatusBadge />
-        <h1 className="text-3xl font-semibold tracking-tight text-text sm:text-4xl">Runner Sports &amp; Analytics</h1>
-        <p className="mx-auto max-w-2xl text-sm text-text-muted sm:text-base">
-          Sports intelligence, predictive modeling, market analytics, and bet tracking — built as one system,
-          under one scoring language.
-        </p>
-        <p className="font-mono text-xs uppercase tracking-[0.2em] text-text-subtle">
-          Data <span className="text-accent mx-2">→</span> Intelligence <span className="text-accent mx-2">→</span> Decisions
-        </p>
-        <div className="flex justify-center gap-3 pt-2">
-          <Link
-            href="/dashboard"
-            className="rounded-md bg-accent px-5 py-2.5 text-sm font-medium text-canvas hover:bg-accent-strong transition-colors"
-          >
-            Enter Dashboard
-          </Link>
-          <Link
-            href="/edge"
-            className="rounded-md border border-border-strong px-5 py-2.5 text-sm font-medium text-text hover:bg-surface-2 transition-colors"
-          >
-            View Edge Board
-          </Link>
+    <main className="runner-grid min-h-dvh overflow-hidden bg-canvas">
+      <nav className="mx-auto flex max-w-7xl items-center justify-between px-5 py-5 lg:px-8" aria-label="Public navigation">
+        <RunnerLogo />
+        <div className="flex items-center gap-3">
+          <Link href="#intelligence" className="hidden text-sm text-text-muted transition hover:text-text sm:block">Platform</Link>
+          <Link href="/dashboard" className="rounded-lg border border-accent/35 bg-accent/10 px-4 py-2 text-sm font-semibold text-accent transition hover:bg-accent/20">Enter Dashboard</Link>
+        </div>
+      </nav>
+
+      <section className="relative mx-auto grid max-w-7xl gap-14 px-5 pb-24 pt-16 lg:grid-cols-[1.05fr_.95fr] lg:px-8 lg:pb-32 lg:pt-24">
+        <div className="relative z-10 max-w-3xl">
+          <p className="mb-6 inline-flex items-center gap-2 rounded-full border border-border-strong bg-surface/70 px-3 py-1.5 text-[11px] font-medium uppercase tracking-[0.18em] text-accent">
+            <span className="h-1.5 w-1.5 rounded-full bg-accent" /> Decision intelligence platform
+          </p>
+          <h1 className="text-5xl font-semibold leading-[1.02] tracking-[-0.045em] text-text sm:text-6xl lg:text-7xl">
+            Sports intelligence.<br /><span className="text-accent">Built different.</span>
+          </h1>
+          <p className="mt-7 max-w-xl text-base leading-7 text-text-muted sm:text-lg">
+            Transform markets, matchups, models, and betting performance into a single, disciplined research workflow.
+          </p>
+          <div className="mt-9 flex flex-wrap gap-3">
+            <Link href="/dashboard" className="rounded-lg bg-accent px-5 py-3 text-sm font-bold text-canvas shadow-[0_0_32px_rgba(101,215,231,0.2)] transition hover:bg-accent-strong">Enter Dashboard →</Link>
+            <Link href="#intelligence" className="rounded-lg border border-border-strong bg-surface/60 px-5 py-3 text-sm font-semibold text-text transition hover:bg-surface-2">Explore Intelligence</Link>
+          </div>
+          <p className="mt-8 text-xs text-text-subtle">Independent analytics platform · No wagers accepted · Demo data clearly identified</p>
+        </div>
+
+        <div className="relative lg:pt-6" aria-label="Runner dashboard preview">
+          <div className="absolute -inset-16 rounded-full bg-accent/10 blur-3xl" />
+          <div className="runner-card relative overflow-hidden p-5">
+            <div className="flex items-center justify-between border-b border-border pb-4">
+              <div className="flex items-center gap-3">
+                <div className="relative h-12 w-12 overflow-hidden rounded-lg bg-canvas"><Image src="/brand/runner-logo.jpg" alt="" fill sizes="48px" className="object-cover" /></div>
+                <div><p className="text-xs font-semibold text-text">Runner Edge Monitor</p><p className="mt-1 text-[10px] uppercase tracking-widest text-text-subtle">Demonstration workspace</p></div>
+              </div>
+              <span className="rounded-full border border-warning/30 bg-warning/10 px-2 py-1 text-[9px] font-semibold tracking-wider text-warning">SIMULATED</span>
+            </div>
+            <div className="mt-5 grid grid-cols-3 gap-3">
+              {[['MODEL PROB.', '58.7%'], ['MARKET PROB.', '52.4%'], ['RUNNER EDGE', '+6.3%']].map(([label, value], index) => (
+                <div key={label} className="rounded-lg border border-border bg-surface-2 p-3">
+                  <p className="text-[9px] tracking-wider text-text-subtle">{label}</p><p className={`mt-2 font-mono text-lg font-semibold ${index === 2 ? 'text-accent' : 'text-text'}`}>{value}</p>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 rounded-lg border border-border bg-surface-2 p-4">
+              <div className="flex items-start justify-between"><div><p className="text-xs text-text-muted">NBA · Spread</p><p className="mt-1 text-sm font-semibold text-text">Boston -4.5</p></div><span className="rounded-full bg-accent/10 px-2 py-1 text-[10px] text-accent">HIGH CONFIDENCE</span></div>
+              <div className="mt-5 h-1.5 overflow-hidden rounded-full bg-canvas"><div className="h-full w-[74%] rounded-full bg-accent" /></div>
+              <div className="mt-3 flex justify-between text-[10px] text-text-subtle"><span>Market comparison</span><span>Updated with demo snapshot</span></div>
+            </div>
+            <div className="mt-4 flex items-center gap-3 text-[10px] uppercase tracking-widest text-text-subtle"><span className="text-accent">Source</span><span>→</span><span className="text-accent">Model</span><span>→</span><span className="text-accent">Decision</span><span>→</span><span className="text-accent">Track</span></div>
+          </div>
         </div>
       </section>
 
-      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {navItems.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className="group rounded-lg border border-border bg-surface p-5 transition-colors hover:border-border-strong hover:bg-surface-2"
-          >
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 items-center justify-center rounded-md border border-border-strong bg-surface-2 text-accent">
-                <NavIcon name={item.icon} className="h-4 w-4" />
+      <section id="intelligence" className="border-y border-border bg-surface/35">
+        <div className="mx-auto max-w-7xl px-5 py-20 lg:px-8">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">The intelligence stack</p>
+          <h2 className="mt-4 max-w-2xl text-3xl font-semibold tracking-tight text-text">Every stage of the decision, connected.</h2>
+          <div className="mt-10 grid gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-2 lg:grid-cols-3">
+            {capabilities.map(([title, description, icon]) => (
+              <div key={title} className="bg-canvas p-6 transition hover:bg-surface">
+                <NavIcon name={icon} className="h-5 w-5 text-accent" />
+                <h3 className="mt-5 text-sm font-semibold text-text">{title}</h3>
+                <p className="mt-2 text-sm leading-6 text-text-muted">{description}</p>
               </div>
-              <p className="text-sm font-semibold text-text">{item.label}</p>
-            </div>
-            <p className="mt-3 text-xs text-text-muted">{pitch[item.label]}</p>
-          </Link>
-        ))}
+            ))}
+          </div>
+        </div>
       </section>
 
-      <section className="rounded-lg border border-border bg-surface p-6 text-center">
-        <p className="text-xs uppercase tracking-wide text-text-subtle">Phase 1 — Application Shell</p>
-        <p className="mt-2 text-sm text-text-muted">
-          All figures across this build are simulated to establish Runner Sports &amp; Analytics&apos; internal data
-          contracts. Live sportsbook and sports-data connections are not yet wired in.
-        </p>
-      </section>
-    </div>
+      <footer className="mx-auto flex max-w-7xl flex-col gap-4 px-5 py-8 text-xs text-text-subtle sm:flex-row sm:items-center sm:justify-between lg:px-8">
+        <p>© 2026 Runners Sports &amp; Analytics LLC</p><p>Research and analytics only. Not a sportsbook.</p>
+      </footer>
+    </main>
   );
 }

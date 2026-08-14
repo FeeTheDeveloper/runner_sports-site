@@ -5,6 +5,8 @@ const paths: Record<string, string> = {
   trending: "M4 16l5-6 4 4 7-9M14 5h6v6",
   activity: "M3 12h4l2 7 4-14 2 7h6",
   cpu: "M8 3v3M12 3v3M16 3v3M8 18v3M12 18v3M16 18v3M3 8h3M3 12h3M3 16h3M18 8h3M18 12h3M18 16h3M7 7h10v10H7z",
+  markets: "M4 7h16M7 4v6M4 17h16M17 14v6",
+  chart: "M4 19V9M10 19V5M16 19v-7M22 19H2",
 };
 
 export default function NavIcon({ name, className }: { name: string; className?: string }) {
