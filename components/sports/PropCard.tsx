@@ -30,19 +30,27 @@ export default function PropCard({ prop }: { prop: PlayerProp }) {
         </div>
       </div>
 
-      <ProbabilityBar label={`Runner projection: ${prop.projection}`} value={prop.probability} />
+      <ProbabilityBar
+        label={prop.projection !== undefined ? `Runner projection: ${prop.projection}` : "No-vig consensus probability"}
+        value={prop.probability}
+      />
 
       <div className="flex items-center justify-between text-xs">
         <span className="text-text-muted">
           Edge <span className={`font-mono ${isOverLean ? "text-positive" : "text-negative"}`}>{formatSignedPercent(prop.edge)}</span>
         </span>
         <span className="text-text-muted">
-          Hit rate (L10) <span className="font-mono text-text">{formatPercent(prop.recentHitRate, 0)}</span>
+          Hit rate (L10){" "}
+          <span className="font-mono text-text">
+            {prop.recentHitRate !== undefined ? formatPercent(prop.recentHitRate, 0) : "—"}
+          </span>
         </span>
         <ConfidenceBadge confidence={prop.confidence} compact />
       </div>
 
-      <p className="text-xs text-text-subtle border-t border-border pt-2">{prop.matchupContext}</p>
+      {prop.matchupContext && (
+        <p className="text-xs text-text-subtle border-t border-border pt-2">{prop.matchupContext}</p>
+      )}
     </div>
   );
 }

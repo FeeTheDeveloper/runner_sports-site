@@ -3,6 +3,8 @@ import GameCard from "@/components/sports/GameCard";
 import SectionHeader from "@/components/ui/SectionHeader";
 import EmptyState from "@/components/ui/EmptyState";
 
+export const dynamic = "force-dynamic";
+
 export default async function GamesPage() {
   const games = await getGames();
   const leagues = Array.from(new Set(games.map((g) => g.league)));
@@ -12,11 +14,17 @@ export default async function GamesPage() {
       <div>
         <h1 className="text-xl font-semibold text-text">Games</h1>
         <p className="mt-1 text-sm text-text-muted">
-          Simulated slate with Runner win-probability projections and the key analytical factors behind each number.
+          Live slate synced from The Odds API, with a no-vig consensus win probability computed across every book
+          quoting each game.
         </p>
       </div>
 
-      {leagues.length === 0 && <EmptyState title="No games available" description="Simulated slate is currently empty." />}
+      {leagues.length === 0 && (
+        <EmptyState
+          title="No games available"
+          description="No games synced yet — set ODDS_API_KEY and CRON_SECRET, then trigger the sync-odds cron job."
+        />
+      )}
 
       {leagues.map((league) => {
         const leagueGames = games.filter((g) => g.league === league);
