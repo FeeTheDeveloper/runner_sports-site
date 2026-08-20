@@ -1,143 +1,66 @@
-import type { TrackedBet, TrackerSummary } from "@/types";
+import type { BetResult, TrackedBet, TrackerSummary } from "@/types";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 
-const mockBets: TrackedBet[] = [
-  {
-    id: "bet-001",
-    date: "2026-08-10",
-    sport: "NFL",
-    event: "KC Chiefs @ LAC Chargers",
-    selection: "KC Chiefs -2.5",
-    market: "Spread",
-    sportsbook: "Runner Composite",
-    odds: -110,
-    stake: 100,
-    result: "win",
-    profit: 90.91,
-    closingOdds: -125,
-    clv: 4.8,
-  },
-  {
-    id: "bet-002",
-    date: "2026-08-10",
-    sport: "MLB",
-    event: "NYY Yankees @ BOS Red Sox",
-    selection: "Over 8.5",
-    market: "Total",
-    sportsbook: "Runner Composite",
-    odds: -105,
-    stake: 50,
-    result: "loss",
-    profit: -50,
-    closingOdds: -112,
-    clv: 2.1,
-  },
-  {
-    id: "bet-003",
-    date: "2026-08-11",
-    sport: "NBA",
-    event: "MIL Bucks @ PHI 76ers",
-    selection: "PHI 76ers ML",
-    market: "Moneyline",
-    sportsbook: "Runner Composite",
-    odds: 142,
-    stake: 40,
-    result: "win",
-    profit: 56.8,
-    closingOdds: 128,
-    clv: -3.4,
-  },
-  {
-    id: "bet-004",
-    date: "2026-08-11",
-    sport: "NHL",
-    event: "TOR Maple Leafs @ MTL Canadiens",
-    selection: "TOR Maple Leafs -1.5",
-    market: "Puck Line",
-    sportsbook: "Runner Composite",
-    odds: 165,
-    stake: 30,
-    result: "push",
-    profit: 0,
-    closingOdds: 160,
-    clv: -1.1,
-  },
-  {
-    id: "bet-005",
-    date: "2026-08-12",
-    sport: "NFL",
-    event: "DET Lions @ GB Packers",
-    selection: "Jared Goff Over 245.5 Pass Yds",
-    market: "Player Prop",
-    sportsbook: "Runner Composite",
-    odds: -108,
-    stake: 60,
-    result: "win",
-    profit: 55.56,
-    closingOdds: -118,
-    clv: 4.2,
-  },
-  {
-    id: "bet-006",
-    date: "2026-08-12",
-    sport: "MLB",
-    event: "HOU Astros @ TEX Rangers",
-    selection: "Under 8.0",
-    market: "Total",
-    sportsbook: "Runner Composite",
-    odds: -110,
-    stake: 45,
-    result: "loss",
-    profit: -45,
-    closingOdds: -108,
-    clv: -0.9,
-  },
-  {
-    id: "bet-007",
-    date: "2026-08-13",
-    sport: "NBA",
-    event: "DEN Nuggets vs. OKC Thunder",
-    selection: "OKC Thunder ML",
-    market: "Moneyline",
-    sportsbook: "Runner Composite",
-    odds: -152,
-    stake: 76,
-    result: "pending",
-    profit: 0,
-  },
-  {
-    id: "bet-008",
-    date: "2026-08-13",
-    sport: "NFL",
-    event: "MIA Dolphins @ BUF Bills",
-    selection: "BUF Bills ML",
-    market: "Moneyline",
-    sportsbook: "Runner Composite",
-    odds: -168,
-    stake: 84,
-    result: "pending",
-    profit: 0,
-  },
-];
+interface TrackedBetRow {
+  id: string;
+  bet_date: string;
+  sport: string;
+  event: string;
+  selection: string;
+  market: string;
+  sportsbook: string;
+  odds: number;
+  stake: number;
+  result: BetResult;
+  profit: number;
+  closing_odds: number | null;
+  clv: number | null;
+}
+
+function mapRow(row: TrackedBetRow): TrackedBet {
+  return {
+    id: row.id,
+    date: row.bet_date,
+    sport: row.sport,
+    event: row.event,
+    selection: row.selection,
+    market: row.market,
+    sportsbook: row.sportsbook,
+    odds: row.odds,
+    stake: row.stake,
+    result: row.result,
+    profit: row.profit,
+    closingOdds: row.closing_odds ?? undefined,
+    clv: row.clv ?? undefined,
+  };
+}
 
 export async function getTrackedBets(): Promise<TrackedBet[]> {
-  return [...mockBets].sort((a, b) => (a.date < b.date ? 1 : -1));
+  const supabase = getSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("tracked_bets")
+    .select("*")
+    .order("bet_date", { ascending: false });
+  if (error) throw error;
+  return (data as unknown as TrackedBetRow[]).map(mapRow);
 }
 
 export async function getTrackerSummary(): Promise<TrackerSummary> {
-  const settled = mockBets.filter((b) => b.result !== "pending");
+  const bets = await getTrackedBets();
+  const settled = bets.filter((b) => b.result !== "pending");
   const wins = settled.filter((b) => b.result === "win").length;
   const losses = settled.filter((b) => b.result === "loss").length;
   const pushes = settled.filter((b) => b.result === "push").length;
-  const pending = mockBets.length - settled.length;
+  const pending = bets.length - settled.length;
 
   const totalStaked = settled.reduce((sum, b) => sum + b.stake, 0);
   const totalProfit = settled.reduce((sum, b) => sum + b.profit, 0);
-  const averageOdds = Math.round(settled.reduce((sum, b) => sum + b.odds, 0) / settled.length);
+  const averageOdds = settled.length > 0 ? Math.round(settled.reduce((sum, b) => sum + b.odds, 0) / settled.length) : 0;
   const clvBets = settled.filter((b) => typeof b.clv === "number");
-  const averageClv = clvBets.reduce((sum, b) => sum + (b.clv ?? 0), 0) / clvBets.length;
+  const averageClv = clvBets.length > 0 ? clvBets.reduce((sum, b) => sum + (b.clv ?? 0), 0) / clvBets.length : 0;
 
   return {
-    totalWagers: mockBets.length,
+    totalWagers: bets.length,
     wins,
     losses,
     pushes,
@@ -149,4 +72,55 @@ export async function getTrackerSummary(): Promise<TrackerSummary> {
     averageOdds,
     averageClv: Math.round(averageClv * 10) / 10,
   };
+}
+
+export interface NewTrackedBet {
+  date: string;
+  sport: string;
+  event: string;
+  selection: string;
+  market: string;
+  sportsbook: string;
+  odds: number;
+  stake: number;
+  result?: BetResult;
+  closingOdds?: number;
+  clv?: number;
+}
+
+function computeProfit(result: BetResult, odds: number, stake: number): number {
+  if (result === "win") {
+    return odds > 0 ? Math.round(stake * (odds / 100) * 100) / 100 : Math.round(stake * (100 / Math.abs(odds)) * 100) / 100;
+  }
+  if (result === "loss") {
+    return -stake;
+  }
+  return 0;
+}
+
+export async function addTrackedBet(input: NewTrackedBet): Promise<TrackedBet> {
+  const result = input.result ?? "pending";
+  const profit = computeProfit(result, input.odds, input.stake);
+
+  const supabase = getSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("tracked_bets")
+    .insert({
+      bet_date: input.date,
+      sport: input.sport,
+      event: input.event,
+      selection: input.selection,
+      market: input.market,
+      sportsbook: input.sportsbook,
+      odds: input.odds,
+      stake: input.stake,
+      result,
+      profit,
+      closing_odds: input.closingOdds ?? null,
+      clv: input.clv ?? null,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return mapRow(data as unknown as TrackedBetRow);
 }

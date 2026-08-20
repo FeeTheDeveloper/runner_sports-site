@@ -1,20 +1,42 @@
 import type { MarketMovementSnapshot } from "@/types";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
 
-const baseSource = {
-  source: "Runner Demo Market Feed",
-  retrievedAt: "2026-08-13T18:42:00-05:00",
-  sport: "Multi-sport",
-  dataType: "fact" as const,
-  freshness: "simulated" as const,
-};
+interface MarketMovementRow {
+  id: string;
+  event: string;
+  market: string;
+  sportsbook: string;
+  opening_line: number | null;
+  current_line: number | null;
+  opening_price: number;
+  current_price: number;
+  direction: MarketMovementSnapshot["direction"];
+  captured_at: string;
+  source: MarketMovementSnapshot["source"];
+}
 
-const mockMarketMovements: MarketMovementSnapshot[] = [
-  { id: "mm-1", event: "MIA Dolphins @ BUF Bills", market: "BUF spread", sportsbook: "Demo Book A", openingLine: -2.5, currentLine: -3.5, openingPrice: -110, currentPrice: -105, direction: "up", capturedAt: "2026-08-13T18:42:00-05:00", source: baseSource },
-  { id: "mm-2", event: "OKC Thunder @ DEN Nuggets", market: "Game total", sportsbook: "Demo Book B", openingLine: 231.5, currentLine: 228, openingPrice: -108, currentPrice: -112, direction: "down", capturedAt: "2026-08-13T18:39:00-05:00", source: baseSource },
-  { id: "mm-3", event: "SFG Giants @ LAD Dodgers", market: "LAD run line", sportsbook: "Demo Book C", openingLine: -1.5, currentLine: -1.5, openingPrice: 138, currentPrice: 132, direction: "flat", capturedAt: "2026-08-13T18:35:00-05:00", source: baseSource },
-  { id: "mm-4", event: "DAL Cowboys @ SF 49ers", market: "Game total", sportsbook: "Demo Book A", openingLine: 46.5, currentLine: 44.5, openingPrice: -110, currentPrice: -108, direction: "down", capturedAt: "2026-08-13T18:31:00-05:00", source: baseSource },
-];
+function mapRow(row: MarketMovementRow): MarketMovementSnapshot {
+  return {
+    id: row.id,
+    event: row.event,
+    market: row.market,
+    sportsbook: row.sportsbook,
+    openingLine: row.opening_line ?? row.current_line ?? 0,
+    currentLine: row.current_line ?? 0,
+    openingPrice: row.opening_price,
+    currentPrice: row.current_price,
+    direction: row.direction,
+    capturedAt: row.captured_at,
+    source: row.source,
+  };
+}
 
 export async function getMarketMovements(): Promise<MarketMovementSnapshot[]> {
-  return mockMarketMovements;
+  const supabase = getSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("market_movements")
+    .select("*")
+    .order("captured_at", { ascending: false });
+  if (error) throw error;
+  return (data as unknown as MarketMovementRow[]).map(mapRow);
 }

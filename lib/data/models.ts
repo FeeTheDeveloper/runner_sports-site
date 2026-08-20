@@ -1,96 +1,47 @@
 import type { RunnerModel } from "@/types";
 
-const mockModels: RunnerModel[] = [
+// Registry of Runner's own model definitions. This is intentionally static
+// config, not something pulled from The Odds API — it documents what each
+// version of RSA's methodology does, not a live data feed.
+//
+// accuracy/calibration/sampleSize are 0 until a real backtest against
+// settled results exists; that is an honest "not measured yet" value, not a
+// fabricated performance number carried over from the old mock data.
+const models: RunnerModel[] = [
   {
-    id: "model-nfl-game-01",
-    name: "RSA NFL GAME MODEL",
-    version: "v1.0",
-    sport: "NFL",
-    target: "Win probability & spread coverage",
-    status: "active",
-    sampleSize: 2450,
-    accuracy: 0.582,
-    calibration: 0.94,
-    roi: 0.041,
-    lastUpdated: "2026-08-11",
-    description:
-      "Estimates game-level win probability from EPA splits, trench matchup grades, rest, and travel. Backtested on simulated historical seasons.",
-  },
-  {
-    id: "model-nba-player-01",
-    name: "RSA NBA PLAYER MODEL",
-    version: "v1.0",
-    sport: "NBA",
-    target: "Player prop projections",
-    status: "active",
-    sampleSize: 18200,
-    accuracy: 0.561,
-    calibration: 0.91,
-    roi: 0.038,
-    lastUpdated: "2026-08-12",
-    description:
-      "Projects points, rebounds, assists, and combo props using usage rate, pace, and opponent defensive matchup profiles.",
-  },
-  {
-    id: "model-mlb-run-01",
-    name: "RSA MLB RUN MODEL",
-    version: "v1.0",
-    sport: "MLB",
-    target: "Run totals & run line",
-    status: "beta",
-    sampleSize: 4100,
-    accuracy: 0.547,
-    calibration: 0.88,
-    roi: 0.019,
-    lastUpdated: "2026-08-09",
-    description:
-      "Simulates expected runs from starter xFIP, bullpen fatigue, park factors, and lineup handedness splits.",
-  },
-  {
-    id: "model-prop-edge-01",
-    name: "RSA PROP EDGE MODEL",
-    version: "v1.0",
+    id: "rsa-edge-model-game",
+    name: "RSA EDGE MODEL",
+    version: "v0.1",
     sport: "Multi-Sport",
-    target: "Cross-sport prop edge detection",
-    status: "active",
-    sampleSize: 31500,
-    accuracy: 0.573,
-    calibration: 0.92,
-    roi: 0.052,
-    lastUpdated: "2026-08-13",
-    description:
-      "Compares Runner player projections against composite market pricing to surface ranked edges for the Runner Edge Board.",
-  },
-  {
-    id: "model-nhl-game-01",
-    name: "RSA NHL GAME MODEL",
-    version: "v0.9",
-    sport: "NHL",
-    target: "Win probability & puck line",
+    target: "Moneyline no-vig consensus edge (NFL, NBA, MLB, NHL)",
     status: "beta",
-    sampleSize: 1680,
-    accuracy: 0.539,
-    calibration: 0.85,
-    lastUpdated: "2026-08-07",
+    sampleSize: 0,
+    accuracy: 0,
+    calibration: 0,
+    lastUpdated: "2026-08-20",
     description:
-      "Early-stage model incorporating goaltending save percentage, special teams, and travel fatigue. Not yet promoted to active.",
+      "Baseline heuristic (lib/models/edgeCalculator.ts): computes a no-vig consensus win probability across every " +
+      "sportsbook quoting a game's moneyline, then compares it to each individual book's own price. This is a " +
+      "market-pricing signal, not a trained predictive model, and has not been backtested against settled outcomes.",
   },
   {
-    id: "model-nfl-player-02",
-    name: "RSA NFL PLAYER MODEL",
-    version: "v0.4",
-    sport: "NFL",
-    target: "Player prop projections",
+    id: "rsa-edge-model-prop",
+    name: "RSA EDGE MODEL",
+    version: "v0.1",
+    sport: "Multi-Sport",
+    target: "Player prop no-vig consensus edge",
     status: "training",
-    sampleSize: 890,
-    accuracy: 0.512,
-    calibration: 0.71,
-    lastUpdated: "2026-08-05",
+    sampleSize: 0,
+    accuracy: 0,
+    calibration: 0,
+    lastUpdated: "2026-08-20",
     description:
-      "In-training successor to prop projections currently sourced from the cross-sport Edge Model. Not yet promoted.",
+      "Same no-vig consensus methodology applied to player props. Status is 'training' rather than 'beta' because " +
+      "the props table is not yet populated — per-event player-prop odds ingestion is a documented next step " +
+      "(see SETUP.md), not wired into the sync-odds cron job yet.",
   },
 ];
 
 export async function getModels(): Promise<RunnerModel[]> {
-  return mockModels;
+  return models;
 }

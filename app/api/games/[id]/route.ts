@@ -2,6 +2,8 @@ import { notFound, ok } from "@/lib/api/response";
 import { getGameById } from "@/lib/data/games";
 import { getPropsByGame } from "@/lib/data/props";
 
+export const revalidate = 60;
+
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const game = await getGameById(id);
