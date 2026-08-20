@@ -6,6 +6,8 @@ import Badge from "@/components/ui/Badge";
 import { formatCurrency, formatDate, formatMoney, formatOdds, formatSignedPercent } from "@/lib/utils/format";
 import type { TrackedBet } from "@/types";
 
+export const dynamic = "force-dynamic";
+
 const resultVariant = {
   win: "success",
   loss: "danger",
@@ -40,7 +42,7 @@ export default async function TrackerPage() {
       <div>
         <h1 className="text-xl font-semibold text-text">Bet Tracker</h1>
         <p className="mt-1 text-sm text-text-muted">
-          Simulated wager log and performance analytics — the foundation for a future verified tracking system.
+          Live wager log backed by Supabase — log a bet via POST /api/tracker; this table starts empty until you do.
         </p>
       </div>
 
@@ -71,7 +73,7 @@ export default async function TrackerPage() {
       </section>
 
       <section>
-        <SectionHeader title="Wager Log" subtitle="Most recent simulated bets" />
+        <SectionHeader title="Wager Log" subtitle="Most recent logged bets" />
         <div className="hidden md:block">
           <SportsTable
             rowKey={(b) => b.id}

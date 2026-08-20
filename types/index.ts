@@ -93,12 +93,15 @@ export interface PlayerProp {
   line: number;
   overOdds: number;
   underOdds: number;
-  projection: number;
+  // Runner does not yet run an independent player-performance projection
+  // model — these stay undefined rather than fabricated until one exists.
+  projection?: number;
   probability: number;
   edge: number;
   confidence: Confidence;
-  recentHitRate: number;
-  matchupContext: string;
+  // No historical hit-rate or scouting/matchup data source is connected yet.
+  recentHitRate?: number;
+  matchupContext?: string;
   source: SourceMetadata;
 }
 

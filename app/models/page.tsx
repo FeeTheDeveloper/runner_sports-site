@@ -17,8 +17,8 @@ export default async function ModelsPage() {
       <div>
         <h1 className="text-xl font-semibold text-text">Runner Models</h1>
         <p className="mt-1 text-sm text-text-muted">
-          Simulated model registry. Sample sizes, accuracy, and calibration are illustrative placeholders — no model
-          listed here is claimed to be production-verified.
+          Each model below is real, running code — not a simulation — but none has been backtested against settled
+          outcomes yet. Sample size, accuracy, and calibration read 0 until that history accumulates.
         </p>
       </div>
 
@@ -45,7 +45,7 @@ export default async function ModelsPage() {
             </div>
 
             <div className="flex items-center justify-between text-xs text-text-subtle">
-              <span>{model.roi !== undefined ? `Simulated ROI: ${formatSignedPercent(model.roi)}` : "ROI not yet applicable"}</span>
+              <span>{model.roi !== undefined ? `ROI: ${formatSignedPercent(model.roi)}` : "ROI not yet measured"}</span>
               <span>Updated {formatDate(model.lastUpdated)}</span>
             </div>
           </div>

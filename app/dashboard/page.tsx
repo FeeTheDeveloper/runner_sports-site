@@ -16,6 +16,8 @@ import TrendIndicator from "@/components/ui/TrendIndicator";
 import EmptyState from "@/components/ui/EmptyState";
 import { formatOdds, formatPercent, formatSignedPercent, formatCurrency } from "@/lib/utils/format";
 
+export const dynamic = "force-dynamic";
+
 const confidenceScore = { high: 1, moderate: 0.66, low: 0.33 } as const;
 
 export default async function DashboardPage() {
@@ -42,7 +44,7 @@ export default async function DashboardPage() {
       <div>
         <h1 className="text-xl font-semibold text-text">Executive Dashboard</h1>
         <p className="mt-1 text-sm text-text-muted">
-          Simulated sports intelligence overview — Runner projections, market edges, and tracked performance.
+          Live sports intelligence overview, synced from The Odds API — no-vig market edges and tracked performance.
         </p>
       </div>
 
@@ -83,7 +85,7 @@ export default async function DashboardPage() {
       <section>
         <SectionHeader
           title="Top Runner Edges"
-          subtitle="Ranked simulated opportunities where model probability diverges from market pricing"
+          subtitle="Ranked by no-vig consensus probability vs. a single book's price (RSA EDGE MODEL v0.1)"
           action={
             <Link href="/edge" className="text-xs text-accent hover:underline">
               Open Edge Board →
@@ -142,7 +144,7 @@ export default async function DashboardPage() {
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
         <section>
-          <SectionHeader title="Market Signals" subtitle="Simulated line movement and model-vs-market deltas" />
+          <SectionHeader title="Market Signals" subtitle="Live line movement and no-vig consensus deltas" />
           <div className="space-y-3">
             {signals.map((signal) => (
               <div key={signal.id} className="rounded-lg border border-border bg-surface p-4">
@@ -166,7 +168,7 @@ export default async function DashboardPage() {
         </section>
 
         <section>
-          <SectionHeader title="Recent Performance" subtitle="Simulated Runner Tracker results" />
+          <SectionHeader title="Recent Performance" subtitle="Live Runner Tracker results" />
           <div className="rounded-lg border border-border bg-surface p-4 space-y-4">
             <div className="grid grid-cols-3 gap-3 text-center">
               <div>

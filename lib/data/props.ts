@@ -1,165 +1,75 @@
-import type { PlayerProp, SourceMetadata } from "@/types";
+import type { Confidence, PlayerProp } from "@/types";
+import { getSupabaseServerClient } from "@/lib/supabase/server";
+import {
+  americanToImpliedProbability,
+  classifyConfidence,
+  computeConsensusProbability,
+  computeEdge,
+  devigTwoWay,
+} from "@/lib/models/edgeCalculator";
 
-const simulated = (sport: string, eventId: string): SourceMetadata => ({
-  source: "Runner Simulated Feed",
-  retrievedAt: "2026-08-13T09:00:00-04:00",
-  sport,
-  eventId,
-  dataType: "model_output",
-  freshness: "simulated",
-});
+interface PropBookOdds {
+  sportsbook: string;
+  line: number;
+  overOdds: number;
+  underOdds: number;
+  capturedAt: string;
+}
 
-const mockProps: PlayerProp[] = [
-  {
-    id: "prop-001",
-    gameId: "game-nfl-001",
-    player: { id: "josh-allen", name: "Josh Allen", team: "BUF", position: "QB" },
-    opponent: "MIA",
-    sport: "NFL",
-    market: "Passing Yards",
-    line: 254.5,
-    overOdds: -115,
-    underOdds: -105,
-    projection: 268.4,
-    probability: 0.581,
-    edge: 0.074,
-    confidence: "high",
-    recentHitRate: 0.7,
-    matchupContext: "Opponent allows 8th-most passing yards/game over last 6",
-    source: simulated("NFL", "game-nfl-001"),
-  },
-  {
-    id: "prop-002",
-    gameId: "game-nfl-001",
-    player: { id: "tyreek-hill", name: "Tyreek Hill", team: "MIA", position: "WR" },
-    opponent: "BUF",
-    sport: "NFL",
-    market: "Receiving Yards",
-    line: 78.5,
-    overOdds: -108,
-    underOdds: -112,
-    projection: 71.2,
-    probability: 0.442,
-    edge: -0.061,
-    confidence: "moderate",
-    recentHitRate: 0.4,
-    matchupContext: "Shadow coverage likely from top-10 graded corner",
-    source: simulated("NFL", "game-nfl-001"),
-  },
-  {
-    id: "prop-003",
-    gameId: "game-nba-001",
-    player: { id: "jayson-tatum", name: "Jayson Tatum", team: "BOS", position: "F" },
-    opponent: "NYK",
-    sport: "NBA",
-    market: "Points",
-    line: 27.5,
-    overOdds: -110,
-    underOdds: -110,
-    projection: 29.6,
-    probability: 0.612,
-    edge: 0.084,
-    confidence: "high",
-    recentHitRate: 0.8,
-    matchupContext: "Opponent perimeter defense ranked 22nd in efficiency",
-    source: simulated("NBA", "game-nba-001"),
-  },
-  {
-    id: "prop-004",
-    gameId: "game-nba-001",
-    player: { id: "jalen-brunson", name: "Jalen Brunson", team: "NYK", position: "G" },
-    opponent: "BOS",
-    sport: "NBA",
-    market: "Assists",
-    line: 6.5,
-    overOdds: -120,
-    underOdds: 100,
-    projection: 6.1,
-    probability: 0.463,
-    edge: -0.021,
-    confidence: "low",
-    recentHitRate: 0.5,
-    matchupContext: "Pace projected below season average, fewer possessions",
-    source: simulated("NBA", "game-nba-001"),
-  },
-  {
-    id: "prop-005",
-    gameId: "game-nba-002",
-    player: { id: "shai-gilgeous-alexander", name: "Shai Gilgeous-Alexander", team: "OKC", position: "G" },
-    opponent: "DEN",
-    sport: "NBA",
-    market: "Points + Assists",
-    line: 35.5,
-    overOdds: -105,
-    underOdds: -115,
-    projection: 38.1,
-    probability: 0.634,
-    edge: 0.101,
-    confidence: "high",
-    recentHitRate: 0.7,
-    matchupContext: "Usage rate spikes on second night of back-to-backs vs. this opponent",
-    source: simulated("NBA", "game-nba-002"),
-  },
-  {
-    id: "prop-006",
-    gameId: "game-mlb-001",
-    player: { id: "shohei-ohtani", name: "Shohei Ohtani", team: "LAD", position: "DH" },
-    opponent: "SFG",
-    sport: "MLB",
-    market: "Total Bases",
-    line: 1.5,
-    overOdds: 128,
-    underOdds: -156,
-    projection: 1.7,
-    probability: 0.521,
-    edge: 0.056,
-    confidence: "moderate",
-    recentHitRate: 0.6,
-    matchupContext: "Favorable platoon split vs. probable starter's arm slot",
-    source: simulated("MLB", "game-mlb-001"),
-  },
-  {
-    id: "prop-007",
-    gameId: "game-mlb-002",
-    player: { id: "spencer-strider", name: "Spencer Strider", team: "ATL", position: "SP" },
-    opponent: "PHI",
-    sport: "MLB",
-    market: "Strikeouts",
-    line: 7.5,
-    overOdds: -110,
-    underOdds: -110,
-    projection: 8.2,
-    probability: 0.578,
-    edge: 0.071,
-    confidence: "moderate",
-    recentHitRate: 0.6,
-    matchupContext: "Opponent lineup strikeout rate ranks 6th-highest league-wide",
-    source: simulated("MLB", "game-mlb-002"),
-  },
-  {
-    id: "prop-008",
-    gameId: "game-nhl-001",
-    player: { id: "connor-mcdavid", name: "Connor McDavid", team: "EDM", position: "C" },
-    opponent: "COL",
-    sport: "NHL",
-    market: "Shots on Goal",
-    line: 3.5,
-    overOdds: -125,
-    underOdds: 105,
-    projection: 3.9,
-    probability: 0.559,
-    edge: 0.048,
-    confidence: "moderate",
-    recentHitRate: 0.6,
-    matchupContext: "Power play time projected above season average",
-    source: simulated("NHL", "game-nhl-001"),
-  },
-];
+interface PropRow {
+  id: string;
+  game_id: string;
+  player: PlayerProp["player"];
+  opponent: string;
+  sport: string;
+  market: string;
+  book_odds: PropBookOdds[];
+  recent_hit_rate: number | null;
+  matchup_context: string | null;
+  source: PlayerProp["source"];
+}
+
+function mapRowToProp(row: PropRow): PlayerProp {
+  const consensusOverFair =
+    row.book_odds.length > 0
+      ? computeConsensusProbability(
+          row.book_odds.map((b) => devigTwoWay(b.overOdds, b.underOdds).probabilityA),
+        )
+      : 0.5;
+
+  const confidence: Confidence = classifyConfidence(row.book_odds.length);
+  const displayed = row.book_odds[0];
+  const impliedOver = displayed ? americanToImpliedProbability(displayed.overOdds) : 0.5;
+
+  return {
+    id: row.id,
+    gameId: row.game_id,
+    player: row.player,
+    opponent: row.opponent,
+    sport: row.sport,
+    market: row.market,
+    line: displayed?.line ?? 0,
+    overOdds: displayed?.overOdds ?? 0,
+    underOdds: displayed?.underOdds ?? 0,
+    probability: Math.round(consensusOverFair * 1000) / 1000,
+    edge: Math.round(computeEdge(consensusOverFair, impliedOver) * 1000) / 1000,
+    confidence,
+    recentHitRate: row.recent_hit_rate ?? undefined,
+    matchupContext: row.matchup_context ?? undefined,
+    source: row.source,
+  };
+}
 
 export async function getProps(): Promise<PlayerProp[]> {
-  return mockProps;
+  const supabase = getSupabaseServerClient();
+  const { data, error } = await supabase.from("props").select("*");
+  if (error) throw error;
+  return (data as unknown as PropRow[]).map(mapRowToProp);
 }
 
 export async function getPropsByGame(gameId: string): Promise<PlayerProp[]> {
-  return mockProps.filter((p) => p.gameId === gameId);
+  const supabase = getSupabaseServerClient();
+  const { data, error } = await supabase.from("props").select("*").eq("game_id", gameId);
+  if (error) throw error;
+  return (data as unknown as PropRow[]).map(mapRowToProp);
 }

@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import RunnerLogo from "@/components/brand/RunnerLogo";
 import NavIcon from "@/components/navigation/NavIcon";
+import ResponsibleGamblingNotice from "@/components/legal/ResponsibleGamblingNotice";
 
 const capabilities = [
   ["Game Intelligence", "Matchups, pricing, and model context organized for fast research.", "calendar"],
@@ -84,8 +85,11 @@ export default function Home() {
         </div>
       </section>
 
-      <footer className="mx-auto flex max-w-7xl flex-col gap-4 px-5 py-8 text-xs text-text-subtle sm:flex-row sm:items-center sm:justify-between lg:px-8">
-        <p>© 2026 Runners Sports &amp; Analytics LLC</p><p>Research and analytics only. Not a sportsbook.</p>
+      <footer className="mx-auto flex max-w-7xl flex-col gap-4 px-5 py-8 text-xs text-text-subtle lg:px-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <p>© 2026 Runners Sports &amp; Analytics LLC</p><p>Research and analytics only. Not a sportsbook.</p>
+        </div>
+        <ResponsibleGamblingNotice />
       </footer>
     </main>
   );

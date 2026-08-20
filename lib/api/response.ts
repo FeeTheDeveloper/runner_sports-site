@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server";
 
-export const dynamic = "force-dynamic";
-
 export function ok<T>(data: T, meta?: Record<string, unknown>) {
   return NextResponse.json(
     { data, ...(meta ? { meta } : {}) },
@@ -14,6 +12,10 @@ export function notFound(resource: string, id: string) {
     { error: { code: "NOT_FOUND", message: `${resource} '${id}' was not found` } },
     { status: 404 },
   );
+}
+
+export function badRequest(message: string) {
+  return NextResponse.json({ error: { code: "BAD_REQUEST", message } }, { status: 400 });
 }
 
 export function filterValue(value: string, expected: string | null) {

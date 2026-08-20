@@ -2,6 +2,8 @@ import type { NextRequest } from "next/server";
 import { filterValue, ok, paginate } from "@/lib/api/response";
 import { getProps } from "@/lib/data/props";
 
+export const revalidate = 60;
+
 export async function GET(request: NextRequest) {
   const params = request.nextUrl.searchParams;
   const minimumEdge = Number(params.get("minEdge") ?? Number.NEGATIVE_INFINITY);
