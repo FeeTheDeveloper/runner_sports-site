@@ -56,10 +56,17 @@ All endpoints return JSON as `{ data, meta? }`; missing resources return a struc
 | `GET /api/signals` | `market`, `direction`, `limit`, `offset` |
 | `GET /api/signals/:id` | None |
 | `GET /api/tracker` | `sport`, `result`, `limit`, `offset` |
+| `POST /api/tracker` | Body: `{ date, sport, event, selection, market, sportsbook, odds, stake, result?, closingOdds?, clv? }` |
 | `GET /api/tracker/:id` | None |
 | `GET /api/tracker/summary` | None |
+| `GET`/`POST /api/cron/sync-odds` | Requires `Authorization: Bearer $CRON_SECRET`. Pulls odds from The Odds API and upserts `games`/`market_movements`/`signals` in Supabase. |
 
-The current data providers are explicitly simulated. Replace the functions in `lib/data` with a live odds/data provider or database without changing these public API contracts.
+`lib/data/*.ts` read from Supabase, which is populated by the `sync-odds` cron job — see [SETUP.md](./SETUP.md) for
+required environment variables, provisioning, and known limitations (player-prop odds are not synced yet).
+
+## Environment variables
+
+See `.env.example` and [SETUP.md](./SETUP.md).
 
 ## Scripts
 
