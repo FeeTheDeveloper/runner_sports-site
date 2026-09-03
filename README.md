@@ -59,10 +59,12 @@ All endpoints return JSON as `{ data, meta? }`; missing resources return a struc
 | `POST /api/tracker` | Body: `{ date, sport, event, selection, market, sportsbook, odds, stake, result?, closingOdds?, clv? }` |
 | `GET /api/tracker/:id` | None |
 | `GET /api/tracker/summary` | None |
-| `GET`/`POST /api/cron/sync-odds` | Requires `Authorization: Bearer $CRON_SECRET`. Pulls odds from The Odds API and upserts `games`/`market_movements`/`signals` in Supabase. |
+| `GET`/`POST /api/cron/sync-odds` | Requires the cron bearer token. Pulls odds from The Odds API and upserts `games`/`market_movements`/`signals` in Supabase. |
+| `GET`/`POST /api/cron/sync-espn` | Requires the cron bearer token. Pulls ESPN scoreboards, injuries, rosters, standings, and team facts into `espn_records`, and seeds the `team_registry` canonical identity. |
+| `GET /api/espn/records` | `sport`, `league`, `dataType`, `entityId`, `limit`, `offset` |
 
-`lib/data/*.ts` read from Supabase, which is populated by the `sync-odds` cron job — see [SETUP.md](./SETUP.md) for
-required environment variables, provisioning, and known limitations (player-prop odds are not synced yet).
+`lib/data/*.ts` read from Supabase, which is populated by the `sync-odds` and `sync-espn` cron jobs — see
+[SETUP.md](./SETUP.md) for required environment variables, provisioning, and known limitations.
 
 ## Environment variables
 

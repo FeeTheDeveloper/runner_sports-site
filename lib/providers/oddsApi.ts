@@ -1,5 +1,5 @@
 import "server-only";
-import type { Game, GameStatus, Player, PlayerProp, SourceMetadata, Sport, Team } from "@/types";
+import type { Game, GameStatus, Player, PlayerProp, SourceMetadata, Sport, Team, TeamRegistryEntry } from "@/types";
 import { sports } from "@/lib/data/sports";
 
 const ODDS_API_BASE = "https://api.the-odds-api.com/v4";
@@ -82,12 +82,35 @@ function deriveAbbreviation(teamName: string): string {
   return initials.slice(-3) || teamName.slice(0, 3).toUpperCase();
 }
 
-function toTeam(name: string): Team {
+// The Odds API identifies teams by display name only. When a team registry
+// seeded from ESPN is available (lib/data/teamRegistry.ts), the provider
+// resolves each name to the canonical registry entry so games join cleanly
+// with ESPN facts; without a registry it falls back to the derived identity.
+export interface EspnTeamIdentityProvider {
+  resolve(name: string): TeamRegistryEntry | undefined;
+}
+
+function fallbackTeamId(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+}
+
+function toTeam(name: string, registry?: EspnTeamIdentityProvider): Team {
+  const entry = registry?.resolve(name);
+  if (entry) {
+    return { id: entry.id, name: entry.name, abbreviation: entry.abbreviation };
+  }
   return {
-    id: name.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
+    id: fallbackTeamId(name),
     name,
     abbreviation: deriveAbbreviation(name),
   };
+}
+
+/** Adapter: builds the identity-provider seam from a registry lookup function. */
+export function buildTeamIdentityProvider(
+  resolve: (name: string) => TeamRegistryEntry | undefined,
+): EspnTeamIdentityProvider {
+  return { resolve };
 }
 
 function toGameStatus(commenceTime: string): GameStatus {
@@ -130,13 +153,13 @@ function extractBookOdds(bookmaker: OddsApiBookmaker, homeTeam: string, awayTeam
   return snapshot;
 }
 
-function mapEventToGame(event: OddsApiEvent, sport: Sport): MappedGame {
+function mapEventToGame(event: OddsApiEvent, sport: Sport, registry?: EspnTeamIdentityProvider): MappedGame {
   return {
     id: event.id,
     sport,
     league: sport.name,
-    homeTeam: toTeam(event.home_team),
-    awayTeam: toTeam(event.away_team),
+    homeTeam: toTeam(event.home_team, registry),
+    awayTeam: toTeam(event.away_team, registry),
     startsAt: event.commence_time,
     status: toGameStatus(event.commence_time),
     bookOdds: event.bookmakers.map((b) => extractBookOdds(b, event.home_team, event.away_team)),
@@ -159,8 +182,16 @@ function mapEventToGame(event: OddsApiEvent, sport: Sport): MappedGame {
  * requires a separate per-event call (see fetchEventPlayerProps) and the
  * available prop market keys vary by sport and by plan tier, so callers
  * should pass the market keys their account actually has access to.
+ *
+ * `registry` is optional: when the caller has already loaded the canonical
+ * team registry (lib/data/teamRegistry.ts), team identities resolve through
+ * it so the resulting games join cleanly with ESPN-sourced facts.
  */
-export async function fetchSportOdds(sportSlug: SportSlug, apiKey: string | undefined): Promise<MappedGame[]> {
+export async function fetchSportOdds(
+  sportSlug: SportSlug,
+  apiKey: string | undefined,
+  registry?: EspnTeamIdentityProvider,
+): Promise<MappedGame[]> {
   const key = assertApiKey(apiKey);
   const sport = sports.find((s) => s.slug === sportSlug);
   if (!sport) {
@@ -180,7 +211,7 @@ export async function fetchSportOdds(sportSlug: SportSlug, apiKey: string | unde
   }
 
   const events: OddsApiEvent[] = await response.json();
-  return events.map((event) => mapEventToGame(event, sport));
+  return events.map((event) => mapEventToGame(event, sport, registry));
 }
 
 export interface MappedPlayerPropMarket {

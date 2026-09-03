@@ -3,8 +3,10 @@ import type { SourceMetadata } from "@/types";
 import { getEnv } from "@/lib/env";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import type { Json } from "@/lib/supabase/database.types";
-import { fetchSportOdds, type MappedGame } from "@/lib/providers/oddsApi";
+import { fetchSportOdds, type EspnTeamIdentityProvider, type MappedGame } from "@/lib/providers/oddsApi";
+import { getTeamIdentityProvider } from "@/lib/data/teamRegistry";
 import { americanToImpliedProbability, computeConsensusProbability, computeEdge, devigTwoWay } from "@/lib/models/edgeCalculator";
+import { authorizeCronRequest } from "../auth";
 
 export const revalidate = 0;
 
@@ -78,7 +80,16 @@ async function syncGames(apiKey: string, supabase: ReturnType<typeof getSupabase
 
   for (const slug of SPORT_SLUGS) {
     try {
-      const games = await fetchSportOdds(slug, apiKey);
+      // Resolve team identities through the canonical registry when it has
+      // been seeded by the ESPN sync; a registry outage must not block the
+      // market feed, so fall back to derived identities on failure.
+      let registry: EspnTeamIdentityProvider | undefined;
+      try {
+        registry = await getTeamIdentityProvider(slug);
+      } catch {
+        registry = undefined;
+      }
+      const games = await fetchSportOdds(slug, apiKey, registry);
 
       if (games.length > 0) {
         const { error: gamesError } = await supabase.from("games").upsert(
@@ -203,19 +214,9 @@ async function syncGames(apiKey: string, supabase: ReturnType<typeof getSupabase
   return results;
 }
 
-// Vercel Cron invokes this path with GET and automatically attaches
-// `Authorization: Bearer $CRON_SECRET`. POST is also supported for manual
-// triggering (e.g. `curl -X POST` while testing locally).
 async function handleSync(request: NextRequest) {
-  const cronSecret = process.env.CRON_SECRET;
-  if (!cronSecret) {
-    return NextResponse.json({ error: { code: "CONFIG", message: "CRON_SECRET is not set" } }, { status: 500 });
-  }
-
-  const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${cronSecret}`) {
-    return NextResponse.json({ error: { code: "UNAUTHORIZED", message: "Invalid or missing bearer token" } }, { status: 401 });
-  }
+  const unauthorized = authorizeCronRequest(request);
+  if (unauthorized) return unauthorized;
 
   const env = getEnv();
   const supabase = getSupabaseServerClient();
