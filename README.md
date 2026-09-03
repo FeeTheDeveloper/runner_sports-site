@@ -39,6 +39,9 @@ public/           # Static assets
 | `/players` | Player intelligence search |
 | `/models` | Runner model registry |
 | `/prediction-markets` | Read-only Kalshi and Polymarket board |
+| `/sign-up` and `/sign-in` | Clerk-hosted account entry paths |
+| `/account` and `/billing` | Protected identity and Stripe billing paths |
+| `/pricing` | Public Runner access levels and Stripe Checkout entry |
 
 ## Getting Started
 
@@ -79,6 +82,19 @@ All endpoints return JSON as `{ data, meta? }`; missing resources return a struc
 | `GET`/`POST /api/cron/sync-prediction-markets` | Requires `Authorization: Bearer $CRON_SECRET`. Pulls read-only sports markets from Kalshi and Polymarket and stores current state plus snapshots. |
 | `GET`/`POST /api/cron/sync-espn` | Requires the cron bearer token. Pulls ESPN scoreboards, injuries, rosters, standings, and team facts into `espn_records`, and seeds the `team_registry` canonical identity. |
 | `GET /api/espn/records` | `sport`, `league`, `dataType`, `entityId`, `limit`, `offset` |
+| `POST /api/checkout` | Authenticated Stripe Checkout Session creation by Runner plan key |
+| `POST /api/billing/portal` | Authenticated Stripe Customer Portal session creation |
+| `POST /api/webhooks/stripe` | Signature-verified subscription lifecycle webhook |
+| `GET`/`POST /mcp` | Streamable HTTP MCP connector for Runner search, plays, and matchup analysis |
+
+## Runner MCP connector
+
+The production connector URL is `https://werunsportsandanalytics.com/mcp`. It is a read-only,
+tool-only MCP server with standard `search` and `fetch` tools plus `get_best_plays` and
+`run_matchup_analysis`. It exposes analytics and source timestamps; it cannot place wagers.
+
+Validate locally with MCP Inspector against `http://localhost:3000/mcp`, then add the production
+HTTPS URL as a custom app/connector in ChatGPT Developer Mode after deployment.
 
 `lib/data/*.ts` read from Supabase, which is populated by the `sync-odds`, `sync-espn`, and
 `sync-prediction-markets` cron jobs — see

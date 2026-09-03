@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import AppShell from "@/components/navigation/AppShell";
+import RunnerAuthProvider from "@/components/auth/RunnerAuthProvider";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://werunsportsandanalytics.com"),
@@ -21,7 +22,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <AppShell>{children}</AppShell>
+        <RunnerAuthProvider>
+          <AppShell>{children}</AppShell>
+        </RunnerAuthProvider>
       </body>
     </html>
   );

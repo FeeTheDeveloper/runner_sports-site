@@ -10,8 +10,11 @@ import RunnerTicker from "@/components/marketing/RunnerTicker";
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const publicPaths = ["/", "/sign-in", "/sign-up", "/pricing", "/checkout/success", "/checkout/cancel"];
 
-  if (pathname === "/") return <>{children}</>;
+  if (publicPaths.some((path) => pathname === path || (path !== "/" && pathname.startsWith(`${path}/`)))) {
+    return <>{children}</>;
+  }
 
   return (
     <div className="flex min-h-dvh bg-canvas">
