@@ -1,6 +1,6 @@
 "use client";
 
-import { SignedIn, SignedOut, UserButton } from "@clerk/nextjs";
+import { Show, UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 
 const clerkEnabled = Boolean(process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY);
@@ -20,19 +20,19 @@ export default function AuthControls() {
 
   return (
     <>
-      <SignedOut>
+      <Show when="signed-out">
         <Link href="/sign-in" className="rounded-lg border border-border px-3 py-2 text-xs font-bold text-text">
           Sign in
         </Link>
-      </SignedOut>
-      <SignedIn>
+      </Show>
+      <Show when="signed-in">
         <UserButton>
           <UserButton.MenuItems>
             <UserButton.Link label="Account" labelIcon={<span>RS</span>} href="/account" />
             <UserButton.Link label="Billing" labelIcon={<span>$</span>} href="/billing" />
           </UserButton.MenuItems>
         </UserButton>
-      </SignedIn>
+      </Show>
     </>
   );
 }
