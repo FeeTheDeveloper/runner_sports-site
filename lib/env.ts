@@ -4,7 +4,6 @@
 const REQUIRED_VARS = [
   "ODDS_API_KEY",
   "SUPABASE_URL",
-  "SUPABASE_ANON_KEY",
   "SUPABASE_SERVICE_ROLE_KEY",
 ] as const;
 
