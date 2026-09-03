@@ -53,17 +53,20 @@ All endpoints return JSON as `{ data, meta? }`; missing resources return a struc
 | `GET /api/models/:id` | None |
 | `GET /api/markets` | `direction`, `sportsbook`, `limit`, `offset` |
 | `GET /api/markets/:id` | None |
+| `GET /api/prediction-markets` | `provider`, `status`, `limit` |
 | `GET /api/signals` | `market`, `direction`, `limit`, `offset` |
 | `GET /api/signals/:id` | None |
 | `GET /api/tracker` | `sport`, `result`, `limit`, `offset` |
 | `POST /api/tracker` | Body: `{ date, sport, event, selection, market, sportsbook, odds, stake, result?, closingOdds?, clv? }` |
 | `GET /api/tracker/:id` | None |
 | `GET /api/tracker/summary` | None |
-| `GET`/`POST /api/cron/sync-odds` | Requires the cron bearer token. Pulls odds from The Odds API and upserts `games`/`market_movements`/`signals` in Supabase. |
+| `GET`/`POST /api/cron/sync-odds` | Requires `Authorization: Bearer $CRON_SECRET`. Pulls odds from The Odds API and upserts `games`/`market_movements`/`signals` in Supabase. |
+| `GET`/`POST /api/cron/sync-prediction-markets` | Requires `Authorization: Bearer $CRON_SECRET`. Pulls read-only sports markets from Kalshi and Polymarket and stores current state plus snapshots. |
 | `GET`/`POST /api/cron/sync-espn` | Requires the cron bearer token. Pulls ESPN scoreboards, injuries, rosters, standings, and team facts into `espn_records`, and seeds the `team_registry` canonical identity. |
 | `GET /api/espn/records` | `sport`, `league`, `dataType`, `entityId`, `limit`, `offset` |
 
-`lib/data/*.ts` read from Supabase, which is populated by the `sync-odds` and `sync-espn` cron jobs — see
+`lib/data/*.ts` read from Supabase, which is populated by the `sync-odds`, `sync-espn`, and
+`sync-prediction-markets` cron jobs — see
 [SETUP.md](./SETUP.md) for required environment variables, provisioning, and known limitations.
 
 ## Environment variables

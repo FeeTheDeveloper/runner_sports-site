@@ -135,6 +135,123 @@ export type Database = {
         };
         Relationships: [];
       };
+      prediction_markets: {
+        Row: {
+          closes_at: string | null;
+          event_id: string | null;
+          external_id: string;
+          id: string;
+          implied_probability: number | null;
+          last_price: number | null;
+          liquidity: number | null;
+          market_type: string;
+          provider: string;
+          raw: Json;
+          rules: string | null;
+          source_timestamp: string;
+          sport: string | null;
+          status: string;
+          title: string;
+          updated_at: string;
+          volume: number | null;
+          yes_ask: number | null;
+          yes_bid: number | null;
+        };
+        Insert: {
+          closes_at?: string | null;
+          event_id?: string | null;
+          external_id: string;
+          id: string;
+          implied_probability?: number | null;
+          last_price?: number | null;
+          liquidity?: number | null;
+          market_type?: string;
+          provider: string;
+          raw?: Json;
+          rules?: string | null;
+          source_timestamp: string;
+          sport?: string | null;
+          status: string;
+          title: string;
+          updated_at?: string;
+          volume?: number | null;
+          yes_ask?: number | null;
+          yes_bid?: number | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["prediction_markets"]["Insert"]>;
+        Relationships: [];
+      };
+      prediction_market_snapshots: {
+        Row: {
+          captured_at: string;
+          id: number;
+          implied_probability: number | null;
+          last_price: number | null;
+          liquidity: number | null;
+          market_id: string;
+          volume: number | null;
+          yes_ask: number | null;
+          yes_bid: number | null;
+        };
+        Insert: {
+          captured_at?: string;
+          id?: never;
+          implied_probability?: number | null;
+          last_price?: number | null;
+          liquidity?: number | null;
+          market_id: string;
+          volume?: number | null;
+          yes_ask?: number | null;
+          yes_bid?: number | null;
+        };
+        Update: Partial<Database["public"]["Tables"]["prediction_market_snapshots"]["Insert"]>;
+        Relationships: [
+          {
+            foreignKeyName: "prediction_market_snapshots_market_id_fkey";
+            columns: ["market_id"];
+            isOneToOne: false;
+            referencedRelation: "prediction_markets";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      prediction_market_game_mappings: {
+        Row: {
+          confidence: number;
+          created_at: string;
+          game_id: string;
+          id: number;
+          mapping_method: string;
+          market_id: string;
+          verified: boolean;
+        };
+        Insert: {
+          confidence: number;
+          created_at?: string;
+          game_id: string;
+          id?: never;
+          mapping_method: string;
+          market_id: string;
+          verified?: boolean;
+        };
+        Update: Partial<Database["public"]["Tables"]["prediction_market_game_mappings"]["Insert"]>;
+        Relationships: [
+          {
+            foreignKeyName: "prediction_market_game_mappings_market_id_fkey";
+            columns: ["market_id"];
+            isOneToOne: false;
+            referencedRelation: "prediction_markets";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "prediction_market_game_mappings_game_id_fkey";
+            columns: ["game_id"];
+            isOneToOne: false;
+            referencedRelation: "games";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       props: {
         Row: {
           book_odds: Json;

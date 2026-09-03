@@ -10,6 +10,7 @@ export const navItems: NavItem[] = [
   { label: "Props", href: "/props", icon: "target" },
   { label: "Edge", href: "/edge", icon: "trending" },
   { label: "Markets", href: "/markets", icon: "markets" },
+  { label: "Prediction Markets", href: "/prediction-markets", icon: "pulse" },
   { label: "Tracker", href: "/tracker", icon: "activity" },
   { label: "Analytics", href: "/analytics", icon: "chart" },
   { label: "Models", href: "/models", icon: "cpu" },
