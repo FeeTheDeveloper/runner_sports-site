@@ -36,7 +36,7 @@ export default function Home() {
             Transform markets, matchups, models, and betting performance into a single, disciplined research workflow.
           </p>
           <div className="mt-9 flex flex-wrap gap-3">
-            <Link href="/dashboard" className="rounded-lg bg-accent px-5 py-3 text-sm font-bold text-canvas shadow-[0_0_32px_rgba(101,215,231,0.2)] transition hover:bg-accent-strong">Enter Dashboard →</Link>
+            <Link href="/dashboard" className="rounded-lg bg-accent px-5 py-3 text-sm font-bold text-white shadow-[0_0_32px_rgba(229,18,43,0.28)] transition hover:bg-accent-strong">Enter Dashboard →</Link>
             <Link href="#intelligence" className="rounded-lg border border-border-strong bg-surface/60 px-5 py-3 text-sm font-semibold text-text transition hover:bg-surface-2">Explore Intelligence</Link>
           </div>
           <p className="mt-8 text-xs text-text-subtle">Independent analytics platform · No wagers accepted · Demo data clearly identified</p>
@@ -47,7 +47,7 @@ export default function Home() {
           <div className="runner-card relative overflow-hidden p-5">
             <div className="flex items-center justify-between border-b border-border pb-4">
               <div className="flex items-center gap-3">
-                <div className="relative h-12 w-12 overflow-hidden rounded-lg bg-canvas"><Image src="/brand/runner-logo.jpg" alt="" fill sizes="48px" className="object-cover" /></div>
+                <div className="relative h-12 w-12 overflow-hidden rounded-lg bg-canvas"><Image src="/brand/icon.png" alt="" fill sizes="48px" className="object-cover" /></div>
                 <div><p className="text-xs font-semibold text-text">Runner Edge Monitor</p><p className="mt-1 text-[10px] uppercase tracking-widest text-text-subtle">Demonstration workspace</p></div>
               </div>
               <span className="rounded-full border border-warning/30 bg-warning/10 px-2 py-1 text-[9px] font-semibold tracking-wider text-warning">SIMULATED</span>

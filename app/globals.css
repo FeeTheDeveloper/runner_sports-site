@@ -1,21 +1,21 @@
 @import "tailwindcss";
 
 :root {
-  --color-canvas: #04132e;
-  --color-surface: #102844;
-  --color-surface-2: #15304b;
-  --color-surface-3: #1d405b;
-  --color-border: rgba(101, 215, 231, 0.12);
-  --color-border-strong: rgba(101, 215, 231, 0.28);
-  --color-text: #f7fafc;
-  --color-text-muted: #a9b8c8;
-  --color-text-subtle: #71869b;
-  --color-accent: #65d7e7;
-  --color-accent-strong: #53b0d0;
-  --color-analytics: #35728c;
-  --color-positive: #3ddc84;
-  --color-negative: #f16565;
-  --color-warning: #f0b94c;
+  --color-canvas: #04081a;
+  --color-surface: #0e1730;
+  --color-surface-2: #162143;
+  --color-surface-3: #1f2c52;
+  --color-border: rgba(229, 18, 43, 0.14);
+  --color-border-strong: rgba(229, 18, 43, 0.32);
+  --color-text: #f7f8fb;
+  --color-text-muted: #a9b1c6;
+  --color-text-subtle: #707c95;
+  --color-accent: #e5122b;
+  --color-accent-strong: #ff3b52;
+  --color-analytics: #3d6f9e;
+  --color-positive: #34d399;
+  --color-negative: #ff6b6b;
+  --color-warning: #f5b843;
   --radius-card: 0.875rem;
   --shadow-card: 0 18px 45px rgba(0, 4, 18, 0.24);
 }
@@ -59,7 +59,7 @@ body::before {
   position: fixed;
   inset: 0;
   z-index: -1;
-  background: radial-gradient(circle at 78% -15%, rgba(83, 176, 208, 0.1), transparent 34%);
+  background: radial-gradient(circle at 78% -15%, rgba(229, 18, 43, 0.1), transparent 34%);
   content: "";
   pointer-events: none;
 }
@@ -89,7 +89,7 @@ button, a, select {
 }
 
 ::selection {
-  background: rgba(101, 215, 231, 0.28);
+  background: rgba(229, 18, 43, 0.28);
   color: var(--color-text);
 }
 
@@ -99,8 +99,8 @@ button, a, select {
 }
 
 .runner-grid {
-  background-image: linear-gradient(rgba(101, 215, 231, 0.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(101, 215, 231, 0.035) 1px, transparent 1px);
+  background-image: linear-gradient(rgba(247, 248, 251, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(247, 248, 251, 0.035) 1px, transparent 1px);
   background-size: 42px 42px;
 }
 
@@ -123,10 +123,10 @@ button, a, select {
 
 .runner-logo-mark {
   background-color: var(--color-canvas);
-  background-image: url("/brand/runner-logo.jpg");
-  background-position: 50% 32%;
+  background-image: url("/brand/icon.png");
+  background-position: center;
   background-repeat: no-repeat;
-  background-size: 285%;
+  background-size: 115%;
 }
 
 ::-webkit-scrollbar {

@@ -31,7 +31,7 @@ export default function AgentNavigator() {
           </div>
         </section>
       )}
-      <button type="button" onClick={() => setOpen((value) => !value)} aria-expanded={open} aria-label={open ? "Close Runner Guide" : "Open Runner Guide"} className="ml-auto flex h-12 items-center gap-2 rounded-full border border-accent/35 bg-accent px-4 text-sm font-bold text-canvas shadow-[0_12px_40px_rgba(101,215,231,.22)] transition hover:-translate-y-0.5 hover:bg-accent-strong">
+      <button type="button" onClick={() => setOpen((value) => !value)} aria-expanded={open} aria-label={open ? "Close Runner Guide" : "Open Runner Guide"} className="ml-auto flex h-12 items-center gap-2 rounded-full border border-accent/35 bg-accent px-4 text-sm font-bold text-white shadow-[0_12px_40px_rgba(229,18,43,.3)] transition hover:-translate-y-0.5 hover:bg-accent-strong">
         <span className="text-lg" aria-hidden="true">✦</span>{open ? "Close" : "Ask Runner"}
       </button>
     </div>
