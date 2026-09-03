@@ -1,14 +1,15 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import AppShell from "@/components/navigation/AppShell";
+import RunnerAuthProvider from "@/components/auth/RunnerAuthProvider";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://runnersportsanalytics.com"),
-  title: { default: "Runner Sports & Analytics", template: "%s | Runner Sports & Analytics" },
-  description: "Sports intelligence, predictive modeling, and bet tracking by Runner Sports & Analytics LLC.",
+  metadataBase: new URL("https://werunsportsandanalytics.com"),
+  title: { default: "We Run Sports and Data | Runner Sports & Analytics", template: "%s | Runner Sports & Analytics" },
+  description: "We run sports and data. Live odds, matchup intelligence, player research, predictive models, and market analysis by Runner Sports & Analytics.",
   icons: { icon: "/brand/icon.png" },
-  openGraph: { title: "Runner Sports & Analytics", description: "Sports intelligence. Built different.", type: "website" },
-  twitter: { card: "summary_large_image", title: "Runner Sports & Analytics", description: "Sports intelligence. Built different." },
+  openGraph: { title: "We Run Sports and Data", description: "The sports intelligence command center by Runner Sports & Analytics.", type: "website" },
+  twitter: { card: "summary_large_image", title: "We Run Sports and Data", description: "The sports intelligence command center by Runner Sports & Analytics." },
 };
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#04081A" };
@@ -21,7 +22,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <AppShell>{children}</AppShell>
+        <RunnerAuthProvider>
+          <AppShell>{children}</AppShell>
+        </RunnerAuthProvider>
       </body>
     </html>
   );

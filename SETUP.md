@@ -40,6 +40,13 @@ CRON_SECRET=
 KALSHI_API_KEY_ID=
 KALSHI_PRIVATE_KEY_BASE64=
 KALSHI_ENV=production
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=
+CLERK_SECRET_KEY=
+STRIPE_SECRET_KEY=
+STRIPE_WEBHOOK_SECRET=
+STRIPE_PRICE_RUNNER_PRO=
+STRIPE_PRICE_RUNNER_COMMAND=
+NEXT_PUBLIC_APP_URL=https://werunsportsandanalytics.com
 ```
 
 Encode the downloaded Kalshi private-key file before placing it in a multiline-hostile environment-variable UI:
@@ -81,6 +88,19 @@ curl -X POST http://localhost:3000/api/cron/sync-espn -H "Authorization: Bearer 
    run) — Vercel automatically sends
    `Authorization: Bearer $CRON_SECRET` on cron-triggered requests once `CRON_SECRET` is set as an env var.
 4. Confirm it under Project Settings → Cron Jobs after the first deploy.
+
+## 6. Clerk, Stripe, and the Runner connector
+
+1. In Clerk, allow the production domain and use `/sign-in` and `/sign-up` as the application paths.
+2. In Stripe, create separate Products for Runner Pro and Runner Command, create recurring Prices,
+   and place their `price_...` IDs in the matching environment variables above.
+3. Register `https://werunsportsandanalytics.com/api/webhooks/stripe` in Stripe for
+   `checkout.session.completed`, `customer.subscription.updated`, and
+   `customer.subscription.deleted`; store the signing secret as `STRIPE_WEBHOOK_SECRET`.
+4. Configure Stripe's Customer Portal before enabling the billing button. Do not enable automatic
+   tax until a business tax registration has been added in Stripe Tax.
+5. After deployment, connect `https://werunsportsandanalytics.com/mcp` in ChatGPT Developer Mode
+   and rescan/refresh the connector whenever MCP tool metadata changes.
 
 ## Known limitations (don't silently paper over these)
 

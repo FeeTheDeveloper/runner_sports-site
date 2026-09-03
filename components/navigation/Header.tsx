@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import DataStatusBadge from "@/components/ui/DataStatusBadge";
 import RunnerLogo from "@/components/brand/RunnerLogo";
+import AuthControls from "@/components/auth/AuthControls";
 
 const productNav = [
   ["Picks", "/picks"],
@@ -32,7 +33,7 @@ export default function Header() {
           <button aria-label="Search Runner" className="hidden min-h-10 rounded-lg border border-border bg-surface px-3 text-xs text-text-muted transition hover:border-border-strong hover:text-text sm:block">Search teams, players, markets <kbd className="ml-4 font-mono text-[10px] text-text-subtle">/</kbd></button>
           <DataStatusBadge />
           <button aria-label="Open alerts" className="grid h-10 w-10 place-items-center rounded-lg border border-border bg-surface text-sm text-text-muted">◎</button>
-          <button aria-label="Open profile" className="grid h-10 w-10 place-items-center rounded-full border border-border-strong bg-surface text-xs font-semibold text-accent">RS</button>
+          <AuthControls />
         </div>
       </div>
       <nav className="flex gap-1 overflow-x-auto border-t border-border px-4 py-2 md:px-6 xl:px-8" aria-label="Sport navigation">

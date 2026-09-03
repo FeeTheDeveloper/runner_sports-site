@@ -7,7 +7,7 @@ export default function RunnerLogo({ compact = false }: { compact?: boolean }) {
       {!compact && (
         <span className="leading-none">
           <span className="block text-sm font-bold tracking-[0.18em] text-text">RUNNER</span>
-          <span className="mt-1 block text-[9px] tracking-[0.16em] text-text-muted">SPORTS &amp; ANALYTICS</span>
+          <span className="mt-1 block text-[9px] tracking-[0.16em] text-text-muted">WE RUN SPORTS + DATA</span>
         </span>
       )}
     </Link>
