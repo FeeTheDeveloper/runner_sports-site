@@ -34,6 +34,15 @@ import { sports } from "@/lib/data/sports";
 const ESPN_SITE_BASE = "https://site.api.espn.com/apis/site/v2/sports";
 const ESPN_WEB_BASE = "https://site.web.api.espn.com/apis/fitt/v3/sports";
 
+// Test hook: lets a harness point the provider at a fixture server. Not used
+// in production paths; the default bases above are restored with no argument.
+export function setEspnBaseUrls(overrides?: { site?: string; web?: string }) {
+  espnBaseUrls.site = overrides?.site ?? ESPN_SITE_BASE;
+  espnBaseUrls.web = overrides?.web ?? ESPN_WEB_BASE;
+}
+
+const espnBaseUrls = { site: ESPN_SITE_BASE, web: ESPN_WEB_BASE };
+
 export const ESPN_SPORT_PATHS: Record<EspnSportSlug, string> = {
   nfl: "football/nfl",
   nba: "basketball/nba",
@@ -163,7 +172,7 @@ async function fetchEspnRaw(options: EspnRequestOptions): Promise<JsonObject> {
 async function espnRequest(sport: EspnSportSlug, path: string, options: Omit<EspnRequestOptions, "path" | "url"> = {}) {
   return fetchEspnRaw({
     ...options,
-    url: `${ESPN_SITE_BASE}/${ESPN_SPORT_PATHS[sport]}/${path.replace(/^\/+/, "")}`,
+    url: `${espnBaseUrls.site}/${ESPN_SPORT_PATHS[sport]}/${path.replace(/^\/+/, "")}`,
   });
 }
 
@@ -791,7 +800,7 @@ export async function fetchEventSummary(sport: EspnSportSlug, eventId: string): 
 export async function fetchLeagueNews(sport: EspnSportSlug, limit = 20): Promise<EspnNewsArticle[]> {
   try {
     const payload = await fetchEspnRaw({
-      url: `${ESPN_WEB_BASE}/${ESPN_SPORT_PATHS[sport]}/news`,
+      url: `${espnBaseUrls.web}/${ESPN_SPORT_PATHS[sport]}/news`,
       params: { limit: String(Math.min(Math.max(Math.trunc(limit), 1), 50)) },
       cacheTtlMs: NEWS_CACHE_TTL_MS,
     });
