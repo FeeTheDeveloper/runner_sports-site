@@ -5,13 +5,13 @@ export interface NavItem {
 }
 
 export const navItems: NavItem[] = [
-  { label: "Dashboard", href: "/dashboard", icon: "grid" },
+  { label: "For You", href: "/picks", icon: "grid" },
+  { label: "Odds", href: "/odds", icon: "markets" },
   { label: "Games", href: "/games", icon: "calendar" },
   { label: "Props", href: "/props", icon: "target" },
-  { label: "Edge", href: "/edge", icon: "trending" },
-  { label: "Markets", href: "/markets", icon: "markets" },
-  { label: "Prediction Markets", href: "/prediction-markets", icon: "pulse" },
+  { label: "Runner Edge", href: "/edge", icon: "trending" },
+  { label: "Research", href: "/research", icon: "chart" },
+  { label: "Systems", href: "/systems", icon: "cpu" },
+  { label: "Models", href: "/models", icon: "pulse" },
   { label: "Tracker", href: "/tracker", icon: "activity" },
-  { label: "Analytics", href: "/analytics", icon: "chart" },
-  { label: "Models", href: "/models", icon: "cpu" },
 ];

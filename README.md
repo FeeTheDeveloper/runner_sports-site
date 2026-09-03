@@ -25,6 +25,21 @@ types/            # Shared TypeScript contracts
 public/           # Static assets
 ```
 
+## Product surfaces
+
+| Route | Purpose |
+|---|---|
+| `/picks` | Personalized Runner edge board |
+| `/odds` | Cross-market odds comparison |
+| `/games/:id` | Full matchup intelligence center |
+| `/props` | Player prop research |
+| `/research` | Team, player, trend, and injury research |
+| `/systems` | Historical system discovery workspace |
+| `/teams` | Canonical team registry and profiles |
+| `/players` | Player intelligence search |
+| `/models` | Runner model registry |
+| `/prediction-markets` | Read-only Kalshi and Polymarket board |
+
 ## Getting Started
 
 ```bash

@@ -1,0 +1,16 @@
+import ProductHeading from "@/components/ui/ProductHeading";
+import FilterBar from "@/components/ui/FilterBar";
+
+const systems = [
+  ["Home favorites after consecutive road losses", "NBA", "81-46", "+29.8", "11.6%", "63.8%", "3"],
+  ["Road underdogs with a rest advantage", "MLB", "142-109", "+21.4", "8.5%", "56.6%", "6"],
+  ["Divisional unders after overtime", "NFL", "34-18", "+13.2", "12.7%", "65.4%", "1"],
+  ["Home teams versus travel fatigue", "NHL", "97-62", "+18.7", "7.4%", "61.0%", "4"],
+];
+
+export default function SystemsPage() { return <div className="space-y-7"><ProductHeading eyebrow="System Finder" title="Find The Pattern" description="Discover, validate, and monitor repeatable sports-market situations. Published systems require sample size, backtest period, drawdown, and current qualifiers." />
+  <div className="data-panel p-5"><p className="text-xs font-bold text-text">Ask Runner AI to find a system</p><div className="mt-3 flex gap-2"><input className="min-w-0 flex-1 rounded-lg border border-border bg-canvas px-4 py-3 text-sm text-text outline-none" placeholder="NBA home favorites after consecutive road losses" aria-label="System query"/><button className="rounded-lg bg-accent px-5 py-3 text-xs font-black text-white">RUN TEST</button></div><div className="mt-3 flex flex-wrap gap-2">{["Home favorites","Back-to-back","Road underdogs","Rest advantage","Division games"].map(x=><button key={x} className="rounded-full border border-border px-3 py-1 text-[10px] text-text-muted">{x}</button>)}</div></div>
+  <FilterBar labels={["All Sports","All Markets","10+ Seasons","Current Qualifiers"]}/>
+  <div className="overflow-x-auto rounded-xl border border-border"><table className="w-full min-w-[880px] border-collapse bg-surface text-left text-xs"><thead className="bg-surface-2 text-[10px] uppercase tracking-widest text-text-subtle"><tr>{["Rank","System","Sport","Record","Units","ROI","Win %","Picks"].map(x=><th key={x} className="px-4 py-3">{x}</th>)}</tr></thead><tbody>{systems.map((row,i)=><tr key={row[0]} className="border-t border-border hover:bg-surface-2"><td className="px-4 py-4 font-mono text-text-subtle">#{i+1}</td><td className="px-4 py-4"><p className="font-bold text-text">{row[0]}</p><p className="mt-1 text-[10px] text-text-subtle">Backtest · sample confidence · CLV tracked</p></td><td className="px-4 py-4 font-bold text-analytics">{row[1]}</td><td className="px-4 py-4 font-mono text-text">{row[2]}</td><td className="px-4 py-4 font-mono text-positive">{row[3]}</td><td className="px-4 py-4 font-mono text-positive">{row[4]}</td><td className="px-4 py-4 font-mono text-text">{row[5]}</td><td className="px-4 py-4"><span className="rounded-full bg-accent/10 px-2 py-1 font-bold text-accent">{row[6]} live</span></td></tr>)}</tbody></table></div>
+  <p className="text-xs leading-5 text-text-subtle">System rows shown here demonstrate the approved product experience. They are not published betting claims and will be replaced by verified backtest outputs when the historical engine is connected.</p>
+  </div>; }

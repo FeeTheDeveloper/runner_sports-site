@@ -16,7 +16,7 @@ export default function Sidebar() {
       </div>
 
       <nav className="flex-1 px-3 py-5 space-y-1" aria-label="Product navigation">
-        <p className="mb-3 px-3 text-[9px] font-semibold uppercase tracking-[0.2em] text-text-subtle">Intelligence workspace</p>
+        <p className="mb-3 px-3 text-[9px] font-semibold uppercase tracking-[0.2em] text-text-subtle">Runner Command</p>
         {navItems.map((item) => {
           const active = pathname === item.href || pathname?.startsWith(`${item.href}/`);
           return (
@@ -37,11 +37,8 @@ export default function Sidebar() {
       </nav>
 
       <div className="px-4 py-4 border-t border-border">
-        <p className="text-[11px] text-text-subtle leading-relaxed">
-          Runner Sports &amp; Analytics LLC
-          <br />
-          Phase 1 — simulated data
-        </p>
+        <Link href="/sportsbooks" className="mb-3 block rounded-lg border border-border bg-canvas px-3 py-2 text-xs font-semibold text-text-muted hover:border-border-strong hover:text-text">Compare Sportsbooks →</Link>
+        <p className="text-[11px] text-text-subtle leading-relaxed">Runner Sports &amp; Analytics LLC<br />Intelligence, not guarantees.</p>
       </div>
     </aside>
   );
