@@ -2,18 +2,17 @@
 
 ## 1. Supabase
 
-A project has already been provisioned for this app:
+A Supabase project must be provisioned for this app. Keep its project reference,
+organization, billing information, and credentials in the deployment environment—not in this public repository.
 
-- Project ref: `ntkicqxydbiqbbkzotbp`
-- URL: `https://ntkicqxydbiqbbkzotbp.supabase.co`
-- Org: "Runner Gang Lifestyle" (billed ~$10/month for this project)
-- Migration applied: `supabase/migrations/0001_init.sql` (creates `games`, `props`, `market_movements`, `signals`,
+- Apply `supabase/migrations/0001_init.sql` (creates `games`, `props`, `market_movements`, `signals`,
   `tracked_bets`, all with row-level security enabled and no policies — meaning only the **service role** key can
   read/write them right now; the anon key has no access until this app grows client-side/user-scoped features).
+- Apply `supabase/migrations/20260903043224_prediction_market_intelligence.sql` for prediction-market storage.
 
 To get the service-role key (not retrievable via automation — grab it from the dashboard):
 
-1. Open the project at [supabase.com/dashboard/project/ntkicqxydbiqbbkzotbp](https://supabase.com/dashboard/project/ntkicqxydbiqbbkzotbp).
+1. Open the project in the [Supabase dashboard](https://supabase.com/dashboard/projects).
 2. Project Settings → API → copy the **service_role** key (under "Project API keys").
 3. Also copy the **anon public** key from the same page (already fetched once, but rotates if you regenerate it).
 
@@ -34,11 +33,23 @@ Copy `.env.example` to `.env.local` and fill in:
 
 ```
 ODDS_API_KEY=
-SUPABASE_URL=https://ntkicqxydbiqbbkzotbp.supabase.co
+SUPABASE_URL=
 SUPABASE_ANON_KEY=
 SUPABASE_SERVICE_ROLE_KEY=
 CRON_SECRET=
+KALSHI_API_KEY_ID=
+KALSHI_PRIVATE_KEY_BASE64=
+KALSHI_ENV=production
 ```
+
+Encode the downloaded Kalshi private-key file before placing it in a multiline-hostile environment-variable UI:
+
+```bash
+base64 < kalshi-private-key.key | tr -d '\n'
+```
+
+Use a Kalshi key with read scope only for this ingestion service. Polymarket's public Gamma market-data API does
+not require account or wallet credentials for this release.
 
 `lib/env.ts` throws a clear error naming any of the first four that's missing, at first use.
 
@@ -60,7 +71,7 @@ curl -X POST http://localhost:3000/api/cron/sync-odds -H "Authorization: Bearer 
 1. Import the repo at [vercel.com/new](https://vercel.com/new).
 2. Add the same environment variables in Project Settings → Environment Variables (mark
    `SUPABASE_SERVICE_ROLE_KEY` and `CRON_SECRET` as sensitive).
-3. `vercel.json` already declares a cron hitting `/api/cron/sync-odds` every 15 minutes — Vercel automatically sends
+3. `vercel.json` declares cron jobs for sportsbook odds every 15 minutes and prediction markets every 10 minutes — Vercel automatically sends
    `Authorization: Bearer $CRON_SECRET` on cron-triggered requests once `CRON_SECRET` is set as an env var.
 4. Confirm it under Project Settings → Cron Jobs after the first deploy.
 
@@ -83,3 +94,8 @@ curl -X POST http://localhost:3000/api/cron/sync-odds -H "Authorization: Bearer 
   predictive model — see `lib/models/edgeCalculator.ts` for the exact math and documented weaknesses.
 - **Responsible-gambling disclaimer copy is a placeholder** (`components/legal/ResponsibleGamblingNotice.tsx`) —
   get it reviewed by counsel for your state-specific requirements before public promotion.
+- **Prediction-market execution is disabled.** The integration reads public Kalshi and Polymarket market data only.
+  Kalshi credentials are reserved for a later authenticated realtime worker. Never expose private keys to client code.
+- **Prediction markets are not automatically matched to sportsbook games yet.** The
+  `prediction_market_game_mappings` table requires exact/manual verification before a cross-market edge is published;
+  settlement wording can differ even when two titles appear to describe the same event.
