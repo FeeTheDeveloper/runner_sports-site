@@ -1,6 +1,6 @@
-// Generated from the live Supabase schema (supabase/migrations/0001_init.sql)
-// via the Supabase MCP `generate_typescript_types`. Regenerate after any
-// migration change rather than hand-editing this file.
+// Generated from the live Supabase schema (supabase/migrations/0001_init.sql,
+// 0002_multi_provider.sql) via the Supabase MCP `generate_typescript_types`.
+// Regenerate after any migration change rather than hand-editing this file.
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 export type Database = {
@@ -9,6 +9,45 @@ export type Database = {
   };
   public: {
     Tables: {
+      espn_records: {
+        Row: {
+          data_type: string;
+          entity_id: string;
+          id: string;
+          league: string;
+          payload: Json;
+          provider: string;
+          retrieved_at: string;
+          source: Json;
+          sport: string;
+          updated_at: string;
+        };
+        Insert: {
+          data_type: string;
+          entity_id: string;
+          id: string;
+          league: string;
+          payload: Json;
+          provider?: string;
+          retrieved_at: string;
+          source: Json;
+          sport: string;
+          updated_at?: string;
+        };
+        Update: {
+          data_type?: string;
+          entity_id?: string;
+          id?: string;
+          league?: string;
+          payload?: Json;
+          provider?: string;
+          retrieved_at?: string;
+          source?: Json;
+          sport?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       games: {
         Row: {
           away_team: Json;
@@ -172,6 +211,39 @@ export type Database = {
           model_market_delta?: number;
           movement?: Json;
           note?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      team_registry: {
+        Row: {
+          abbreviation: string;
+          aliases: string[];
+          espn_id: string | null;
+          id: string;
+          league: string;
+          name: string;
+          odds_api_name: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          abbreviation: string;
+          aliases?: string[];
+          espn_id?: string | null;
+          id: string;
+          league: string;
+          name: string;
+          odds_api_name?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          abbreviation?: string;
+          aliases?: string[];
+          espn_id?: string | null;
+          id?: string;
+          league?: string;
+          name?: string;
+          odds_api_name?: string | null;
           updated_at?: string;
         };
         Relationships: [];

@@ -49,10 +49,14 @@ npm install
 npm run dev
 ```
 
-Every page will render empty (games/markets/signals) until you trigger a sync at least once:
+Every page will render empty (games/markets/signals) until you trigger a sync at least once. The ESPN
+enrichment sync runs separately and needs no API key:
 
 ```bash
 curl -X POST http://localhost:3000/api/cron/sync-odds -H "Authorization: Bearer $CRON_SECRET"
+curl -X POST http://localhost:3000/api/cron/sync-espn -H "Authorization: Bearer $CRON_SECRET"
+# Narrow an ESPN run with query params, e.g.:
+#   /api/cron/sync-espn?tiers=teams,scoreboard&sports=nba
 ```
 
 ## 5. Deploying to Vercel
@@ -60,7 +64,9 @@ curl -X POST http://localhost:3000/api/cron/sync-odds -H "Authorization: Bearer 
 1. Import the repo at [vercel.com/new](https://vercel.com/new).
 2. Add the same environment variables in Project Settings → Environment Variables (mark
    `SUPABASE_SERVICE_ROLE_KEY` and `CRON_SECRET` as sensitive).
-3. `vercel.json` already declares a cron hitting `/api/cron/sync-odds` every 15 minutes — Vercel automatically sends
+3. `vercel.json` declares crons hitting `/api/cron/sync-odds` every 15 minutes and `/api/cron/sync-espn`
+   every 5 minutes (the ESPN route tiers work by freshness — teams daily, rosters every 6 hours,
+   injuries hourly, standings every 30 minutes, scoreboards on every run) — Vercel automatically sends
    `Authorization: Bearer $CRON_SECRET` on cron-triggered requests once `CRON_SECRET` is set as an env var.
 4. Confirm it under Project Settings → Cron Jobs after the first deploy.
 
@@ -76,9 +82,15 @@ curl -X POST http://localhost:3000/api/cron/sync-odds -H "Authorization: Bearer 
   are `undefined` until a real projection/stats pipeline exists — they are not backfilled with guesses.
 - **`Game.keyFactors` is always `[]`.** The old mock data's scouting-style bullet points aren't real analysis; no
   replacement source is connected yet.
-- **Team abbreviations are derived, not official.** The Odds API only returns full team names; `deriveAbbreviation()`
-  in `lib/providers/oddsApi.ts` generates a short code from initials, which will sometimes disagree with a league's
-  actual abbreviation (e.g. "NYK" vs. a derived "NYK" only by coincidence).
+- **Team abbreviations are derived until ESPN seeds the registry.** The Odds API only returns full team
+  names; `deriveAbbreviation()` in `lib/providers/oddsApi.ts` generates a short code from initials. Once
+  `/api/cron/sync-espn?tiers=teams` has populated `team_registry`, the odds sync resolves names through
+  it (official ESPN abbreviations) and the derived code is only a fallback.
+- **ESPN endpoints are unofficial and unstable.** They can change shape or rate-limit without notice, so
+  `lib/providers/espnApi.ts` caches aggressively, times out fast, retries only transient failures, and
+  every ingestion tier fails soft — an ESPN outage degrades enrichment (`espn_records` goes stale) but
+  never blocks the market feed. ESPN odds are a cross-check reference only; The Odds API remains the
+  market source of truth.
 - **RSA EDGE MODEL v0.1 is an unbacktested heuristic** (no-vig consensus vs. one book's price), not a trained
   predictive model — see `lib/models/edgeCalculator.ts` for the exact math and documented weaknesses.
 - **Responsible-gambling disclaimer copy is a placeholder** (`components/legal/ResponsibleGamblingNotice.tsx`) —
