@@ -7,6 +7,10 @@
     {
       "path": "/api/cron/sync-prediction-markets",
       "schedule": "*/10 * * * *"
+    },
+    {
+      "path": "/api/cron/sync-espn",
+      "schedule": "*/5 * * * *"
     }
   ]
 }
