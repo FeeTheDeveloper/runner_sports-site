@@ -339,6 +339,7 @@ export type Database = {
           espn_id: string | null;
           id: string;
           league: string;
+          logo_url: string | null;
           name: string;
           odds_api_name: string | null;
           updated_at: string;
@@ -349,6 +350,7 @@ export type Database = {
           espn_id?: string | null;
           id: string;
           league: string;
+          logo_url?: string | null;
           name: string;
           odds_api_name?: string | null;
           updated_at?: string;
@@ -359,6 +361,7 @@ export type Database = {
           espn_id?: string | null;
           id?: string;
           league?: string;
+          logo_url?: string | null;
           name?: string;
           odds_api_name?: string | null;
           updated_at?: string;

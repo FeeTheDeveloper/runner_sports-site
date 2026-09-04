@@ -67,7 +67,7 @@ export interface Market {
 // provider resolves its name-only teams against it (see
 // lib/data/teamRegistry.ts and lib/providers/oddsApi.ts).
 
-export type EspnSportSlug = "nfl" | "nba" | "mlb" | "nhl";
+export type EspnSportSlug = "nfl" | "nba" | "mlb" | "nhl" | "ncaaf" | "ncaab" | "wnba";
 
 export interface TeamRegistryEntry {
   id: string;
@@ -77,6 +77,7 @@ export interface TeamRegistryEntry {
   espnId?: string;
   oddsApiName?: string;
   aliases: string[];
+  logoUrl?: string;
 }
 
 export interface EspnCompetitorScore {

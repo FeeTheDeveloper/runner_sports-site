@@ -48,6 +48,9 @@ export const ESPN_SPORT_PATHS: Record<EspnSportSlug, string> = {
   nba: "basketball/nba",
   mlb: "baseball/mlb",
   nhl: "hockey/nhl",
+  ncaaf: "football/college-football",
+  ncaab: "basketball/mens-college-basketball",
+  wnba: "basketball/wnba",
 };
 
 export const ESPN_PROVIDER = "ESPN";
