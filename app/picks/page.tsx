@@ -7,13 +7,17 @@ import { formatOdds, formatPercent, formatSignedPercent } from "@/lib/utils/form
 
 export const dynamic = "force-dynamic";
 
-export default async function PicksPage() {
-  const [edges, props] = await Promise.all([getEdges().catch(() => []), getProps().catch(() => [])]);
+const SPORTS = ["MLB", "NFL", "NBA", "NHL"];
+
+export default async function PicksPage({ searchParams }: { searchParams: Promise<{ sport?: string; market?: string }> }) {
+  const params = await searchParams;
+  const [allEdges, props] = await Promise.all([getEdges({ sport: params.sport, limit: 50 }).catch(() => []), getProps().catch(() => [])]);
+  const edges = params.market ? allEdges.filter((edge) => edge.market.toLowerCase() === params.market) : allEdges;
   const recommendations = edges.slice(0, 8);
   return (
     <div className="space-y-7">
       <ProductHeading eyebrow="Runner Command" title="Picks For You" description="The strongest model-versus-market disagreements on today’s board, ranked by edge, confidence, and data quality." actions={<><Link href="/models" className="rounded-lg border border-border px-4 py-2 text-xs font-bold text-text-muted">Manage Models</Link><Link href="/tracker" className="rounded-lg bg-accent px-4 py-2 text-xs font-bold text-white">Open Tracker</Link></>} />
-      <FilterBar labels={["All Sports", "All Markets", "Best Available", "Today"]} />
+      <FilterBar sports={SPORTS} markets={["Moneyline"]} showDate={false} showSearch={false} />
       {recommendations.length ? <div className="grid gap-4 lg:grid-cols-2 2xl:grid-cols-3">{recommendations.map((edge, index) => (
         <article key={edge.id} className="data-panel signal-glow overflow-hidden">
           <div className="flex items-center justify-between border-b border-border px-5 py-3"><span className="text-[10px] font-bold uppercase tracking-widest text-text-subtle">#{index + 1} Runner Pick</span><span className="rounded-full bg-positive/10 px-2 py-1 text-[10px] font-bold text-positive">{edge.confidence} confidence</span></div>
