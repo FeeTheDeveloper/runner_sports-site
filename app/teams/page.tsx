@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import ProductHeading from "@/components/ui/ProductHeading";
 import { getTeamRegistry } from "@/lib/data/teamRegistry";
 
@@ -12,6 +13,6 @@ export default async function TeamsPage() { const teams = (await Promise.all(LEA
   </div>; }
 
 function TeamFace({ name, abbreviation, logoUrl }: { name: string; abbreviation: string; logoUrl?: string }) {
-  if (logoUrl) return <img src={logoUrl} alt={`${name} logo`} className="h-10 w-10 shrink-0 rounded-lg bg-canvas object-contain" loading="lazy" />;
+  if (logoUrl) return <Image src={logoUrl} alt={`${name} logo`} width={40} height={40} className="h-10 w-10 shrink-0 rounded-lg bg-canvas object-contain" loading="lazy" />;
   return <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg border border-border bg-canvas text-[10px] font-black text-text-muted">{abbreviation}</span>;
 }
