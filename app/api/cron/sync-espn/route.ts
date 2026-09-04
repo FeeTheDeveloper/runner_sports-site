@@ -17,7 +17,7 @@ import { authorizeCronRequest } from "../auth";
 
 export const revalidate = 0;
 
-const SPORT_SLUGS: EspnSportSlug[] = ["nfl", "nba", "mlb", "nhl"];
+const SPORT_SLUGS: EspnSportSlug[] = ["nfl", "nba", "mlb", "nhl", "ncaaf", "ncaab", "wnba"];
 
 // Freshness tiers: different data decays at different rates, so each tier is
 // ingested independently rather than via one monolithic job. A manual run can
@@ -140,6 +140,7 @@ async function syncTeamsTier(collector: TierCollector, sport: EspnSportSlug): Pr
         abbreviation: team.abbreviation,
         oddsApiName: prior?.oddsApiName,
         aliases: buildAliasList(team.name, team.location, ...(prior?.aliases ?? [])),
+        logoUrl: team.logoUrl ?? prior?.logoUrl,
       };
     }),
   );

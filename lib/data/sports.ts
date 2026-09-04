@@ -5,4 +5,7 @@ export const sports: Sport[] = [
   { id: "nba", name: "NBA", slug: "nba" },
   { id: "mlb", name: "MLB", slug: "mlb" },
   { id: "nhl", name: "NHL", slug: "nhl" },
+  { id: "ncaaf", name: "NCAAF", slug: "ncaaf" },
+  { id: "ncaab", name: "NCAAB", slug: "ncaab" },
+  { id: "wnba", name: "WNBA", slug: "wnba" },
 ];
