@@ -282,6 +282,7 @@ export interface Game {
   total: { line: number; over: number; under: number };
   runnerProjectedWinner: string;
   modelProbability: number;
+  marketImpliedProbability: number;
   confidence: Confidence;
   keyFactors: string[];
   source: SourceMetadata;

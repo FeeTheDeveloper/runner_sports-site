@@ -1,7 +1,12 @@
 import type { Confidence, Game } from "@/types";
 import { sports } from "@/lib/data/sports";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
-import { classifyConfidence, computeConsensusProbability, devigTwoWay } from "@/lib/models/edgeCalculator";
+import {
+  americanToImpliedProbability,
+  classifyConfidence,
+  computeConsensusProbability,
+  devigTwoWay,
+} from "@/lib/models/edgeCalculator";
 import type { BookOddsSnapshot } from "@/lib/providers/oddsApi";
 
 interface GameRow {
@@ -44,6 +49,14 @@ function mapRowToGame(row: GameRow): Game {
   const displayedSpread = spreadBooks[0]?.spread ?? { home: NO_ODDS, away: NO_ODDS, line: 0 };
   const displayedTotal = totalBooks[0]?.total ?? { line: 0, over: NO_ODDS, under: NO_ODDS };
 
+  // Always resolve to the projected winner (favorite), not the home team's
+  // raw number — a road favorite must show its own (higher) probability,
+  // not the home underdog's lower one.
+  const isHomeFavorite = consensusHomeFair >= 0.5;
+  const favoriteFairProbability = isHomeFavorite ? consensusHomeFair : 1 - consensusHomeFair;
+  const favoriteMoneyline = isHomeFavorite ? displayedMoneyline.home : displayedMoneyline.away;
+  const hasMoneylineOdds = displayedMoneyline.home !== NO_ODDS && displayedMoneyline.away !== NO_ODDS;
+
   return {
     id: row.id,
     sport,
@@ -55,8 +68,11 @@ function mapRowToGame(row: GameRow): Game {
     moneyline: displayedMoneyline,
     spread: displayedSpread,
     total: displayedTotal,
-    runnerProjectedWinner: consensusHomeFair >= 0.5 ? row.home_team.id : row.away_team.id,
-    modelProbability: Math.round(consensusHomeFair * 1000) / 1000,
+    runnerProjectedWinner: isHomeFavorite ? row.home_team.id : row.away_team.id,
+    modelProbability: Math.round(favoriteFairProbability * 1000) / 1000,
+    marketImpliedProbability: hasMoneylineOdds
+      ? Math.round(americanToImpliedProbability(favoriteMoneyline) * 1000) / 1000
+      : Math.round(favoriteFairProbability * 1000) / 1000,
     confidence,
     // No scouting/analysis pipeline is connected yet, so this stays empty
     // rather than carrying over the old mock's fabricated bullet points.
