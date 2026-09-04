@@ -47,6 +47,7 @@ function mapRow(row: PredictionMarketRow): PredictionMarketSnapshot {
 
 export async function getPredictionMarkets(filters?: {
   provider?: PredictionMarketProvider;
+  sport?: string;
   status?: string;
   limit?: number;
 }): Promise<PredictionMarketSnapshot[]> {
@@ -58,6 +59,7 @@ export async function getPredictionMarkets(filters?: {
     .limit(filters?.limit ?? 100);
 
   if (filters?.provider) query = query.eq("provider", filters.provider);
+  if (filters?.sport) query = query.ilike("sport", filters.sport);
   if (filters?.status) query = query.eq("status", filters.status);
 
   const { data, error } = await query;
