@@ -120,12 +120,13 @@ async function syncRostersTier(collector: TierCollector, sport: EspnSportSlug) {
 }
 
 async function syncTeamsTier(collector: TierCollector, sport: EspnSportSlug): Promise<number> {
-  await collector.add(() => fetchTeamsRecord(sport), "teams");
+  const record = await fetchTeamsRecord(sport);
+  await collector.add(async () => record, "teams");
 
   // Seed the canonical registry from ESPN team facts. Existing Odds API name
   // joins are preserved — ESPN never clobbers a mapping it does not own.
   const league = leagueOf(sport);
-  const teams = await fetchTeams(sport);
+  const teams = record.payload as Awaited<ReturnType<typeof fetchTeams>>;
   if (teams.length === 0) return 0;
   const byEspnId = new Map(
     (await getTeamRegistry(league)).filter((e: TeamRegistryEntry) => e.espnId).map((e) => [e.espnId as string, e]),
