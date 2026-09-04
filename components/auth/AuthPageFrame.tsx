@@ -20,7 +20,7 @@ export default function AuthPageFrame({
         <section>
           <p className="text-[10px] font-black uppercase tracking-[.28em] text-accent">{eyebrow}</p>
           <h1 className="mt-5 text-5xl font-black uppercase leading-[.9] tracking-[-.05em] text-white sm:text-7xl">{title}</h1>
-          <p className="mt-6 max-w-lg text-base leading-7 text-text-muted">One identity across picks, saved research, alerts, model access and billing. We run sports and data.</p>
+          <p className="mt-6 max-w-lg text-base leading-7 text-text-muted">One identity across picks, saved research, alerts, model access and billing. We run sports and analytics.</p>
         </section>
         <section className="flex justify-center lg:justify-end">{children}</section>
       </div>
