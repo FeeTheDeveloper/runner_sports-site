@@ -54,6 +54,10 @@ export default function GameCard({ game, showFactors = false }: GameCardProps) {
           ))}
         </ul>
       )}
+      <div className="flex items-center justify-between border-t border-border pt-3 text-[10px] text-text-subtle">
+        <span>Market source: {game.source.source}</span>
+        <span>{new Date(game.source.retrievedAt).toLocaleString("en-US", { timeZone: "America/Chicago" })} CT</span>
+      </div>
     </div>
   );
 }

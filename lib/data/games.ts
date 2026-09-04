@@ -27,6 +27,8 @@ export interface GameQuery {
   query?: string;
   sport?: string;
   limit?: number;
+  startsAfter?: string;
+  startsBefore?: string;
 }
 
 // American odds are never literally 0, so 0 is used as a "no book data yet"
@@ -108,6 +110,8 @@ export async function getGames(options: GameQuery = {}): Promise<Game[]> {
   const supabase = getSupabaseServerClient();
   const limit = Math.min(Math.max(options.limit ?? 100, 1), 100);
   let request = supabase.from("games").select(GAME_SELECT).order("starts_at", { ascending: true }).limit(limit);
+  if (options.startsAfter) request = request.gte("starts_at", options.startsAfter);
+  if (options.startsBefore) request = request.lt("starts_at", options.startsBefore);
   if (options.sport) request = request.ilike("league", safeSearchTerm(options.sport));
   const term = options.query ? safeSearchTerm(options.query) : "";
   if (term) {
