@@ -90,8 +90,10 @@ interface KalshiMarket {
 
 interface KalshiEvent {
   event_ticker: string;
+  series_ticker?: string;
   title: string;
   category?: string;
+  product_metadata?: Record<string, unknown>;
   markets?: KalshiMarket[];
 }
 
@@ -104,8 +106,9 @@ export async function fetchKalshiSportsMarkets(): Promise<PredictionMarketSnapsh
   const results: PredictionMarketSnapshot[] = [];
   let cursor: string | undefined;
 
-  // Bound pagination so one cron invocation cannot run indefinitely.
-  for (let page = 0; page < 5; page += 1) {
+  // Kalshi's events endpoint does not expose a category filter. Walk the
+  // complete open-event cursor, with a hard ceiling to keep cron bounded.
+  for (let page = 0; page < 25; page += 1) {
     const url = new URL(`${KALSHI_BASE}/events`);
     url.searchParams.set("status", "open");
     url.searchParams.set("with_nested_markets", "true");
@@ -124,6 +127,7 @@ export async function fetchKalshiSportsMarkets(): Promise<PredictionMarketSnapsh
 
     for (const event of payload.events ?? []) {
       if (event.category?.toLowerCase() !== "sports") continue;
+      const sport = inferKalshiSport(event);
       for (const market of event.markets ?? []) {
         const yesBid = optionalNumber(market.yes_bid_dollars);
         const yesAsk = optionalNumber(market.yes_ask_dollars);
@@ -134,9 +138,9 @@ export async function fetchKalshiSportsMarkets(): Promise<PredictionMarketSnapsh
           externalId: market.ticker,
           eventId: market.event_ticker,
           title: market.title || market.subtitle || market.yes_sub_title || event.title,
-          sport: event.category,
+          sport,
           marketType: market.market_type || "binary",
-          status: market.status,
+          status: normalizeKalshiStatus(market.status),
           yesBid,
           yesAsk,
           lastPrice,
@@ -156,6 +160,26 @@ export async function fetchKalshiSportsMarkets(): Promise<PredictionMarketSnapsh
   }
 
   return results;
+}
+
+function normalizeKalshiStatus(status: string): string {
+  return status === "active" || status === "open" ? "open" : status;
+}
+
+function inferKalshiSport(event: KalshiEvent): string {
+  const metadataSport = event.product_metadata?.sport;
+  if (typeof metadataSport === "string" && metadataSport.trim()) return metadataSport.trim().toUpperCase();
+  const text = `${event.series_ticker ?? ""} ${event.event_ticker} ${event.title}`.toLowerCase();
+  const patterns: Array<[RegExp, string]> = [
+    [/wnba/, "WNBA"],
+    [/ncaaf|college football/, "NCAAF"],
+    [/ncaab|college basketball/, "NCAAB"],
+    [/nfl|pro football/, "NFL"],
+    [/nba|pro basketball/, "NBA"],
+    [/mlb|pro baseball/, "MLB"],
+    [/nhl|pro hockey/, "NHL"],
+  ];
+  return patterns.find(([pattern]) => pattern.test(text))?.[1] ?? "Sports";
 }
 
 interface PolymarketMarket {
@@ -181,20 +205,26 @@ interface PolymarketMarket {
 }
 
 export async function fetchPolymarketSportsMarkets(): Promise<PredictionMarketSnapshot[]> {
-  const url = new URL(`${POLYMARKET_GAMMA_BASE}/markets`);
-  url.searchParams.set("active", "true");
-  url.searchParams.set("closed", "false");
-  url.searchParams.set("tag_id", "1"); // Polymarket's top-level sports tag.
-  url.searchParams.set("related_tags", "true");
-  url.searchParams.set("order", "volume24hr");
-  url.searchParams.set("ascending", "false");
-  url.searchParams.set("limit", "250");
+  const markets: PolymarketMarket[] = [];
+  const pageSize = 250;
+  for (let page = 0; page < 20; page += 1) {
+    const url = new URL(`${POLYMARKET_GAMMA_BASE}/markets`);
+    url.searchParams.set("active", "true");
+    url.searchParams.set("closed", "false");
+    url.searchParams.set("tag_id", "1"); // Polymarket's top-level sports tag.
+    url.searchParams.set("related_tags", "true");
+    url.searchParams.set("order", "volume24hr");
+    url.searchParams.set("ascending", "false");
+    url.searchParams.set("limit", String(pageSize));
+    url.searchParams.set("offset", String(page * pageSize));
+    const response = await fetch(url, { cache: "no-store" });
+    if (!response.ok) throw new Error(`Polymarket market request failed (${response.status})`);
+    const pageMarkets = (await response.json()) as PolymarketMarket[];
+    markets.push(...pageMarkets);
+    if (pageMarkets.length < pageSize) break;
+  }
 
-  const response = await fetch(url, { cache: "no-store" });
-  if (!response.ok) throw new Error(`Polymarket market request failed (${response.status})`);
-  const markets = (await response.json()) as PolymarketMarket[];
-
-  return markets.map((market) => {
+  const snapshots = markets.map((market) => {
     const outcomes = parseJsonArray(market.outcomes).map(String);
     const prices = parseJsonArray(market.outcomePrices).map(optionalNumber);
     const yesIndex = outcomes.findIndex((outcome) => outcome.toLowerCase() === "yes");
@@ -224,6 +254,7 @@ export async function fetchPolymarketSportsMarkets(): Promise<PredictionMarketSn
       raw: market,
     } satisfies PredictionMarketSnapshot;
   });
+  return Array.from(new Map(snapshots.map((market) => [market.id, market])).values());
 }
 
 export async function fetchPredictionMarkets(): Promise<{
