@@ -29,7 +29,7 @@ export default function GameDetailView({ game, props }: { game: Game; props: Pla
             <p className="text-[10px] font-bold uppercase tracking-widest text-accent">Model Comparison</p>
             <div className="mt-5 space-y-4">
               <Compare label="RSA probability" value={formatPercent(game.modelProbability)} accent />
-              <Compare label="Market implied" value={formatPercent(game.modelProbability)} />
+              <Compare label="Market implied" value={formatPercent(game.marketImpliedProbability)} />
               <Compare label="ESPN predictor" value="Awaiting event data" />
             </div>
           </div>
