@@ -1,15 +1,11 @@
 import { createMcpHandler } from "mcp-handler";
 import { z } from "zod";
-import { getEdges } from "@/lib/data/edges";
+import { getEdgeById, getEdges } from "@/lib/data/edges";
 import { getGameById, getGames } from "@/lib/data/games";
 import { getPropsByGame } from "@/lib/data/props";
 
 const SITE_URL = (process.env.NEXT_PUBLIC_APP_URL ?? "https://werunsportsandanalytics.com").replace(/\/$/, "");
 const READ_ONLY = { readOnlyHint: true, destructiveHint: false, openWorldHint: false } as const;
-
-function searchable(value: unknown) {
-  return JSON.stringify(value).toLowerCase();
-}
 
 function toolError(message: string) {
   return { isError: true, content: [{ type: "text" as const, text: message }] };
@@ -27,10 +23,9 @@ const handler = createMcpHandler(
       },
       async ({ query }) => {
         try {
-          const [edges, games] = await Promise.all([getEdges(), getGames()]);
-          const needle = query.toLowerCase();
-          const edgeResults = edges.filter((edge) => searchable(edge).includes(needle)).slice(0, 8).map((edge) => ({ id: `edge:${edge.id}`, title: `${edge.selection} — ${edge.event}`, url: `${SITE_URL}/picks?edge=${encodeURIComponent(edge.id)}` }));
-          const gameResults = games.filter((game) => searchable(game).includes(needle)).slice(0, 8).map((game) => ({ id: `game:${game.id}`, title: `${game.awayTeam.name} @ ${game.homeTeam.name}`, url: `${SITE_URL}/games/${encodeURIComponent(game.id)}` }));
+          const [edges, games] = await Promise.all([getEdges({ query, limit: 12 }), getGames({ query, limit: 12 })]);
+          const edgeResults = edges.slice(0, 8).map((edge) => ({ id: `edge:${edge.id}`, title: `${edge.selection} — ${edge.event}`, url: `${SITE_URL}/picks?edge=${encodeURIComponent(edge.id)}` }));
+          const gameResults = games.slice(0, 8).map((game) => ({ id: `game:${game.id}`, title: `${game.awayTeam.name} @ ${game.homeTeam.name}`, url: `${SITE_URL}/games/${encodeURIComponent(game.id)}` }));
           return { content: [{ type: "text", text: JSON.stringify({ results: [...edgeResults, ...gameResults].slice(0, 12) }) }] };
         } catch {
           return toolError("Runner data is temporarily unavailable. The connector did not fabricate results.");
@@ -50,7 +45,7 @@ const handler = createMcpHandler(
         try {
           if (id.startsWith("edge:")) {
             const edgeId = id.slice(5);
-            const edge = (await getEdges()).find((entry) => entry.id === edgeId);
+            const edge = await getEdgeById(edgeId);
             if (!edge) return toolError(`Runner play ${edgeId} was not found.`);
             return { content: [{ type: "text", text: JSON.stringify({ id, title: `${edge.selection} — ${edge.event}`, text: JSON.stringify(edge), url: `${SITE_URL}/picks?edge=${encodeURIComponent(edge.id)}`, metadata: { dataType: "calculation", source: edge.source, updatedAt: edge.updatedAt } }) }] };
           }
@@ -81,9 +76,7 @@ const handler = createMcpHandler(
       },
       async ({ sport, minimumEdge, limit }) => {
         try {
-          const plays = (await getEdges())
-            .filter((edge) => (!sport || edge.sport.toLowerCase() === sport.toLowerCase() || edge.league.toLowerCase() === sport.toLowerCase()) && edge.edge >= minimumEdge)
-            .slice(0, limit);
+          const plays = await getEdges({ sport, minimumEdge, limit });
           const generatedAt = new Date().toISOString();
           const methodology = "Current no-vig multi-book consensus versus displayed market price. Baseline market-pricing signal; not a trained or independently backtested win model.";
           return { structuredContent: { plays, methodology, generatedAt }, content: [{ type: "text", text: plays.length ? `Found ${plays.length} current Runner play${plays.length === 1 ? "" : "s"}. Review methodology, freshness and risk before acting.` : "No live plays currently meet those filters. Runner did not manufacture a recommendation." }] };
