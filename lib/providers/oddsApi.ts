@@ -8,6 +8,7 @@ export const ODDS_API_SPORT_KEYS = {
   nfl: "americanfootball_nfl",
   ncaaf: "americanfootball_ncaaf",
   nba: "basketball_nba",
+  wnba: "basketball_wnba",
   mlb: "baseball_mlb",
   nhl: "icehockey_nhl",
 } as const;
