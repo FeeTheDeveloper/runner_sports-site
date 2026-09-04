@@ -562,33 +562,29 @@ const ATHLETE_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 const NEWS_CACHE_TTL_MS = 30 * 60 * 1000;
 
 /** Scoreboard (schedule + live scores + ESPN's own odds line) for one sport. Soft-fail: returns [] on error. */
+async function fetchScoreboardStrict(sport: EspnSportSlug, dates?: string): Promise<EspnScoreboardEvent[]> {
+  const payload = await espnRequest(sport, "scoreboard", {
+    params: dates ? { dates, limit: "100" } : { limit: "100" },
+    cacheTtlMs: SCOREBOARD_CACHE_TTL_MS,
+  });
+  return asArray(payload.events).map(asRecord).map((event) => event ? mapEvent(event) : undefined).filter((e): e is EspnScoreboardEvent => Boolean(e));
+}
+
 export async function fetchScoreboard(sport: EspnSportSlug, dates?: string): Promise<EspnScoreboardEvent[]> {
-  try {
-    const payload = await espnRequest(sport, "scoreboard", {
-      params: dates ? { dates } : {},
-      cacheTtlMs: SCOREBOARD_CACHE_TTL_MS,
-    });
-    return asArray(payload.events)
-      .map(asRecord)
-      .map((event) => (event ? mapEvent(event) : undefined))
-      .filter((e): e is EspnScoreboardEvent => Boolean(e));
-  } catch {
-    return [];
-  }
+  try { return await fetchScoreboardStrict(sport, dates); } catch { return []; }
 }
 
 /** League team listing (canonical ESPN team facts). Soft-fail: returns [] on error. */
+async function fetchTeamsStrict(sport: EspnSportSlug): Promise<EspnLeagueTeam[]> {
+  const payload = await espnRequest(sport, "teams", { params: { limit: sport === "ncaaf" || sport === "ncaab" ? "500" : "100" }, cacheTtlMs: TEAMS_CACHE_TTL_MS });
+  const leagues = asArray(asRecord(asArray(payload.sports)[0])?.leagues).map(asRecord);
+  const teams = leagues.flatMap((league) => asArray(league?.teams)).map(mapLeagueTeam).filter((t): t is EspnLeagueTeam => Boolean(t));
+  if (teams.length === 0) throw new EspnApiError(`ESPN returned no team records for ${sport}`);
+  return teams;
+}
+
 export async function fetchTeams(sport: EspnSportSlug): Promise<EspnLeagueTeam[]> {
-  try {
-    const payload = await espnRequest(sport, "teams", { cacheTtlMs: TEAMS_CACHE_TTL_MS });
-    const leagues = asArray(asRecord(asArray(payload.sports)[0])?.leagues).map(asRecord);
-    return leagues
-      .flatMap((league) => asArray(league?.teams))
-      .map(mapLeagueTeam)
-      .filter((t): t is EspnLeagueTeam => Boolean(t));
-  } catch {
-    return [];
-  }
+  try { return await fetchTeamsStrict(sport); } catch { return []; }
 }
 
 /** One team's facts by ESPN team id. Hard-fail: throws EspnApiError on error. */
@@ -819,13 +815,13 @@ export async function fetchLeagueNews(sport: EspnSportSlug, limit = 20): Promise
 
 export async function fetchScoreboardRecord(sport: EspnSportSlug, dates?: string): Promise<EspnRecordRow> {
   const retrievedAt = new Date().toISOString();
-  const events = await fetchScoreboard(sport, dates);
+  const events = await fetchScoreboardStrict(sport, dates);
   return buildRecord(sport, "scoreboard", dates ?? "today", events, retrievedAt);
 }
 
 export async function fetchTeamsRecord(sport: EspnSportSlug): Promise<EspnRecordRow> {
   const retrievedAt = new Date().toISOString();
-  const teams = await fetchTeams(sport);
+  const teams = await fetchTeamsStrict(sport);
   return buildRecord(sport, "teams", "all", teams, retrievedAt);
 }
 
