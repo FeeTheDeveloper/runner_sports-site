@@ -46,6 +46,7 @@ interface TeamRegistryRow {
   espn_id: string | null;
   odds_api_name: string | null;
   aliases: string[];
+  logo_url: string | null;
 }
 
 function rowToEntry(row: TeamRegistryRow): TeamRegistryEntry {
@@ -58,6 +59,7 @@ function rowToEntry(row: TeamRegistryRow): TeamRegistryEntry {
   };
   if (row.espn_id) entry.espnId = row.espn_id;
   if (row.odds_api_name) entry.oddsApiName = row.odds_api_name;
+  if (row.logo_url) entry.logoUrl = row.logo_url;
   return entry;
 }
 
@@ -76,7 +78,7 @@ export async function getTeamRegistry(league: string): Promise<TeamRegistryEntry
  * Rows are keyed by id so re-seeding is idempotent.
  */
 export async function upsertTeamRegistryEntries(
-  entries: { league: string; espnId?: string; name: string; abbreviation?: string; oddsApiName?: string; aliases?: string[] }[],
+  entries: { league: string; espnId?: string; name: string; abbreviation?: string; oddsApiName?: string; aliases?: string[]; logoUrl?: string }[],
 ): Promise<number> {
   if (entries.length === 0) return 0;
   const supabase = getSupabaseServerClient();
@@ -89,6 +91,7 @@ export async function upsertTeamRegistryEntries(
     espn_id: entry.espnId ?? null,
     odds_api_name: entry.oddsApiName ?? null,
     aliases: buildAliasList(entry.name, entry.oddsApiName, ...(entry.aliases ?? [])),
+    logo_url: entry.logoUrl ?? null,
     updated_at: now,
   }));
   const { error } = await supabase.from("team_registry").upsert(rows);
