@@ -8,6 +8,7 @@ import {
   devigTwoWay,
 } from "@/lib/models/edgeCalculator";
 import type { BookOddsSnapshot } from "@/lib/providers/oddsApi";
+import { resolveTeamSearchNames } from "@/lib/data/teamRegistry";
 
 interface GameRow {
   id: string;
@@ -22,11 +23,17 @@ interface GameRow {
   source: Game["source"];
 }
 
+export interface GameQuery {
+  query?: string;
+  sport?: string;
+  limit?: number;
+}
+
 // American odds are never literally 0, so 0 is used as a "no book data yet"
 // sentinel rather than a fabricated price — see mapRowToGame below.
 const NO_ODDS = 0;
 
-function mapRowToGame(row: GameRow): Game {
+export function mapRowToGame(row: GameRow): Game {
   const sport = sports.find((s) => s.id === row.sport_id) ?? {
     id: row.sport_id,
     name: row.league,
@@ -74,23 +81,48 @@ function mapRowToGame(row: GameRow): Game {
       ? Math.round(americanToImpliedProbability(favoriteMoneyline) * 1000) / 1000
       : Math.round(favoriteFairProbability * 1000) / 1000,
     confidence,
-    // No scouting/analysis pipeline is connected yet, so this stays empty
-    // rather than carrying over the old mock's fabricated bullet points.
-    keyFactors: row.key_factors,
+    keyFactors: buildRunnerFactors(row, moneylineBooks.length, favoriteFairProbability),
     source: row.source,
   };
 }
 
-export async function getGames(): Promise<Game[]> {
+function buildRunnerFactors(row: GameRow, bookCount: number, favoriteProbability: number): string[] {
+  if (row.key_factors.length > 0) return row.key_factors;
+  const factors: string[] = [];
+  if (bookCount > 0) {
+    factors.push(`${bookCount}-book no-vig moneyline consensus favors ${favoriteProbability >= 0.5 ? "the projected winner" : "the opponent"} at ${Math.round(favoriteProbability * 100)}%.`);
+  }
+  if (bookCount >= 3) factors.push("Cross-book depth supports a moderate-or-better market confidence grade.");
+  if (row.status === "live") factors.push("Game is live; prices and probabilities can move quickly.");
+  if (factors.length === 0) factors.push("No verified moneyline market is available yet; Runner is withholding a directional claim.");
+  return factors;
+}
+
+const GAME_SELECT = "id, sport_id, league, home_team, away_team, starts_at, status, book_odds, key_factors, source";
+
+function safeSearchTerm(value: string): string {
+  return value.trim().replace(/[%(),]/g, " ").replace(/\s+/g, " ").slice(0, 80);
+}
+
+export async function getGames(options: GameQuery = {}): Promise<Game[]> {
   const supabase = getSupabaseServerClient();
-  const { data, error } = await supabase.from("games").select("*").order("starts_at", { ascending: true });
+  const limit = Math.min(Math.max(options.limit ?? 100, 1), 100);
+  let request = supabase.from("games").select(GAME_SELECT).order("starts_at", { ascending: true }).limit(limit);
+  if (options.sport) request = request.ilike("league", safeSearchTerm(options.sport));
+  const term = options.query ? safeSearchTerm(options.query) : "";
+  if (term) {
+    const teamNames = await resolveTeamSearchNames(term).catch(() => [term]);
+    const teamFilters = teamNames.flatMap((name) => [`home_team->>name.ilike.%${safeSearchTerm(name)}%`, `away_team->>name.ilike.%${safeSearchTerm(name)}%`]);
+    request = request.or([`league.ilike.%${term}%`, `sport_id.ilike.%${term}%`, ...teamFilters].join(","));
+  }
+  const { data, error } = await request;
   if (error) throw error;
   return (data as unknown as GameRow[]).map(mapRowToGame);
 }
 
 export async function getGameById(id: string): Promise<Game | undefined> {
   const supabase = getSupabaseServerClient();
-  const { data, error } = await supabase.from("games").select("*").eq("id", id).maybeSingle();
+  const { data, error } = await supabase.from("games").select(GAME_SELECT).eq("id", id).maybeSingle();
   if (error) throw error;
   return data ? mapRowToGame(data as unknown as GameRow) : undefined;
 }

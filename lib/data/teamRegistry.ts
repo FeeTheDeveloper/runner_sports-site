@@ -71,6 +71,27 @@ export async function getTeamRegistry(league: string): Promise<TeamRegistryEntry
   return (data as unknown as TeamRegistryRow[]).map(rowToEntry);
 }
 
+/** Expands a user-entered team name/abbreviation to canonical provider names. */
+export async function resolveTeamSearchNames(query: string, limit = 5): Promise<string[]> {
+  const term = query.trim().replace(/[%(),]/g, " ").replace(/\s+/g, " ").slice(0, 80);
+  if (!term) return [];
+  const supabase = getSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("team_registry")
+    .select("name, odds_api_name, aliases")
+    .or(`name.ilike.%${term}%,abbreviation.ilike.%${term}%,odds_api_name.ilike.%${term}%`)
+    .limit(Math.min(Math.max(limit, 1), 10));
+  if (error) throw error;
+  return buildAliasList(
+    term,
+    ...((data ?? []) as Pick<TeamRegistryRow, "name" | "odds_api_name" | "aliases">[]).flatMap((row) => [
+      row.name,
+      row.odds_api_name ?? undefined,
+      ...row.aliases,
+    ]),
+  ).slice(0, 12);
+}
+
 /**
  * Upserts ESPN team facts into the registry. ESPN is the authoritative source
  * for official names/abbreviations; the provider name from The Odds API is

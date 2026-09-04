@@ -9,6 +9,7 @@ import {
   devigTwoWay,
 } from "@/lib/models/edgeCalculator";
 import type { BookOddsSnapshot } from "@/lib/providers/oddsApi";
+import { resolveTeamSearchNames } from "@/lib/data/teamRegistry";
 
 const RISK_BY_CONFIDENCE: Record<Confidence, RiskLevel> = {
   high: "low",
@@ -35,6 +36,13 @@ interface PropRow {
   market: string;
   book_odds: { sportsbook: string; line: number; overOdds: number; underOdds: number }[];
   updated_at: string;
+}
+
+export interface EdgeQuery {
+  query?: string;
+  sport?: string;
+  minimumEdge?: number;
+  limit?: number;
 }
 
 function gameMoneylineEdges(row: GameRow): RunnerEdge[] {
@@ -128,11 +136,38 @@ function propEdge(row: PropRow): RunnerEdge | null {
   };
 }
 
-export async function getEdges(): Promise<RunnerEdge[]> {
+function safeSearchTerm(value: string): string {
+  return value.trim().replace(/[%(),]/g, " ").replace(/\s+/g, " ").slice(0, 80);
+}
+
+export async function getEdges(options: EdgeQuery = {}): Promise<RunnerEdge[]> {
   const supabase = getSupabaseServerClient();
+  const candidateLimit = Math.min(Math.max((options.limit ?? 50) * 3, 10), 100);
+  const term = options.query ? safeSearchTerm(options.query) : "";
+  let gamesRequest = supabase
+    .from("games")
+    .select("id, sport_id, league, home_team, away_team, book_odds, updated_at")
+    .order("starts_at", { ascending: true })
+    .limit(candidateLimit);
+  let propsRequest = supabase
+    .from("props")
+    .select("id, game_id, player, opponent, sport, market, book_odds, updated_at")
+    .order("updated_at", { ascending: false })
+    .limit(candidateLimit);
+  if (options.sport) {
+    const sport = safeSearchTerm(options.sport);
+    gamesRequest = gamesRequest.or(`league.ilike.%${sport}%,sport_id.ilike.%${sport}%`);
+    propsRequest = propsRequest.ilike("sport", `%${sport}%`);
+  }
+  if (term) {
+    const teamNames = await resolveTeamSearchNames(term).catch(() => [term]);
+    const teamFilters = teamNames.flatMap((name) => [`home_team->>name.ilike.%${safeSearchTerm(name)}%`, `away_team->>name.ilike.%${safeSearchTerm(name)}%`]);
+    gamesRequest = gamesRequest.or([`league.ilike.%${term}%`, `sport_id.ilike.%${term}%`, ...teamFilters].join(","));
+    propsRequest = propsRequest.or(`sport.ilike.%${term}%,market.ilike.%${term}%,opponent.ilike.%${term}%,player->>name.ilike.%${term}%,player->>team.ilike.%${term}%`);
+  }
   const [{ data: games, error: gamesError }, { data: props, error: propsError }] = await Promise.all([
-    supabase.from("games").select("id, sport_id, league, home_team, away_team, book_odds, updated_at"),
-    supabase.from("props").select("id, game_id, player, opponent, sport, market, book_odds, updated_at"),
+    gamesRequest,
+    propsRequest,
   ]);
   if (gamesError) throw gamesError;
   if (propsError) throw propsError;
@@ -141,6 +176,26 @@ export async function getEdges(): Promise<RunnerEdge[]> {
   const fromProps = (props as unknown as PropRow[]).map(propEdge).filter((e): e is RunnerEdge => e !== null);
 
   return [...fromGames, ...fromProps]
+    .filter((edge) => edge.edge >= (options.minimumEdge ?? 0))
     .sort((a, b) => b.edge - a.edge)
+    .slice(0, Math.min(Math.max(options.limit ?? 50, 1), 100))
     .map((edge, index) => ({ ...edge, rank: index + 1 }));
+}
+
+export async function getEdgeById(id: string): Promise<RunnerEdge | undefined> {
+  const gameMatch = id.match(/^(.*)-ml-(home|away)$/);
+  const propMatch = id.match(/^(.*)-over$/);
+  const supabase = getSupabaseServerClient();
+  if (gameMatch) {
+    const { data, error } = await supabase.from("games").select("id, sport_id, league, home_team, away_team, book_odds, updated_at").eq("id", gameMatch[1]).maybeSingle();
+    if (error) throw error;
+    return data ? gameMoneylineEdges(data as unknown as GameRow).find((edge) => edge.id === id) : undefined;
+  }
+  if (propMatch) {
+    const { data, error } = await supabase.from("props").select("id, game_id, player, opponent, sport, market, book_odds, updated_at").eq("id", propMatch[1]).maybeSingle();
+    if (error) throw error;
+    const edge = data ? propEdge(data as unknown as PropRow) : null;
+    return edge?.id === id ? edge : undefined;
+  }
+  return undefined;
 }
