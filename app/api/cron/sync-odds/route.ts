@@ -10,7 +10,7 @@ import { authorizeCronRequest } from "../auth";
 
 export const revalidate = 0;
 
-const SPORT_SLUGS = ["nfl", "nba", "mlb", "nhl"] as const;
+const SPORT_SLUGS = ["nfl", "ncaaf", "nba", "mlb", "nhl"] as const;
 
 // Our domain types (Team, SourceMetadata, BookOddsSnapshot[], ...) are known
 // to be plain JSON-serializable data, but don't structurally satisfy the
