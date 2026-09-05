@@ -112,3 +112,11 @@ See `.env.example` and [SETUP.md](./SETUP.md).
 | `npm run build` | Production build |
 | `npm run start` | Start production server |
 | `npm run lint` | Run ESLint |
+
+## Related documentation
+
+This repo is the product/presentation layer; `runner_sports_demon` is the primary
+intelligence engine. See that repo's `PROJECT_HANDOFF.md` for the full architecture
+and role assignment, and `CLAUDE_CREW_RESEARCH_PROTOCOL.md` for the live/pregame/
+halftime research packet formats that feed the `/research` and `/prediction-markets`
+surfaces here.
