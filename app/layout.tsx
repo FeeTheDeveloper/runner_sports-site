@@ -1,4 +1,6 @@
 import type { Metadata, Viewport } from "next";
+// Next.js loads this stylesheet at runtime; TypeScript has no declaration for CSS side-effect imports.
+// @ts-expect-error CSS modules are handled by Next.js.
 import "./globals.css";
 import AppShell from "@/components/navigation/AppShell";
 import RunnerAuthProvider from "@/components/auth/RunnerAuthProvider";
