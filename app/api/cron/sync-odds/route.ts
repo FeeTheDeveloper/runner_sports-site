@@ -1,9 +1,15 @@
 import { NextResponse, type NextRequest } from "next/server";
-import type { SourceMetadata } from "@/types";
+import type { EspnRosterAthlete, Player, SourceMetadata } from "@/types";
 import { getEnv } from "@/lib/env";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import type { Json } from "@/lib/supabase/database.types";
-import { fetchSportOdds, type EspnTeamIdentityProvider, type MappedGame } from "@/lib/providers/oddsApi";
+import {
+  fetchEventPlayerProps,
+  fetchSportOdds,
+  type EspnTeamIdentityProvider,
+  type MappedGame,
+  type MappedPlayerPropMarket,
+} from "@/lib/providers/oddsApi";
 import { getTeamIdentityProvider } from "@/lib/data/teamRegistry";
 import { americanToImpliedProbability, computeConsensusProbability, computeEdge, devigTwoWay } from "@/lib/models/edgeCalculator";
 import { authorizeCronRequest } from "../auth";
@@ -11,6 +17,21 @@ import { authorizeCronRequest } from "../auth";
 export const revalidate = 0;
 
 const SPORT_SLUGS = ["nfl", "ncaaf", "nba", "wnba", "mlb", "nhl"] as const;
+type SportSlug = (typeof SPORT_SLUGS)[number];
+
+// Keep prop ingestion useful and quota-bounded. The event endpoint charges by
+// market, so each sport requests three high-signal O/U markets for only the
+// nearest four events inside the next 36 hours.
+const PROP_MARKETS: Record<SportSlug, string[]> = {
+  nfl: ["player_pass_yds", "player_rush_yds", "player_reception_yds"],
+  ncaaf: ["player_pass_yds", "player_rush_yds", "player_reception_yds"],
+  nba: ["player_points", "player_rebounds", "player_assists"],
+  wnba: ["player_points", "player_rebounds", "player_assists"],
+  mlb: ["batter_hits", "batter_total_bases", "pitcher_strikeouts"],
+  nhl: ["player_shots_on_goal", "player_points", "player_total_saves"],
+};
+const PROP_EVENT_LIMIT = 4;
+const PROP_HORIZON_MS = 36 * 60 * 60 * 1000;
 
 // Our domain types (Team, SourceMetadata, BookOddsSnapshot[], ...) are known
 // to be plain JSON-serializable data, but don't structurally satisfy the
@@ -36,6 +57,122 @@ interface MovementRow {
   direction: "up" | "down" | "flat";
   captured_at: string;
   source: SourceMetadata;
+}
+
+interface AthleteIdentity extends Player {
+  teamName: string;
+}
+
+function normalizeName(value: string): string {
+  return value.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
+}
+
+async function loadAthleteIdentities(
+  supabase: ReturnType<typeof getSupabaseServerClient>,
+  slug: SportSlug,
+  league: string,
+): Promise<Map<string, AthleteIdentity>> {
+  const [{ data: rosterRows }, { data: teamRows }] = await Promise.all([
+    supabase.from("espn_records").select("entity_id, payload").eq("sport", slug).eq("data_type", "roster"),
+    supabase.from("team_registry").select("espn_id, name, abbreviation").eq("league", league),
+  ]);
+  const teams = new Map(
+    (teamRows ?? []).filter((team) => team.espn_id).map((team) => [team.espn_id as string, team]),
+  );
+  const identities = new Map<string, AthleteIdentity>();
+
+  for (const row of rosterRows ?? []) {
+    const team = teams.get(row.entity_id);
+    if (!team || !Array.isArray(row.payload)) continue;
+    for (const value of row.payload) {
+      if (!value || typeof value !== "object" || Array.isArray(value)) continue;
+      const athlete = value as unknown as EspnRosterAthlete;
+      if (!athlete.name || !athlete.espnId) continue;
+      identities.set(normalizeName(athlete.name), {
+        id: `espn:${slug}:${athlete.espnId}`,
+        name: athlete.name,
+        team: team.abbreviation,
+        teamName: team.name,
+        position: athlete.position,
+        headshotUrl: athlete.headshotUrl,
+      });
+    }
+  }
+  return identities;
+}
+
+function propRow(
+  slug: SportSlug,
+  prop: MappedPlayerPropMarket,
+  athletes: Map<string, AthleteIdentity>,
+) {
+  const identity = athletes.get(normalizeName(prop.player.name));
+  const player = identity ?? prop.player;
+  const matchup = `${prop.opponent.away} @ ${prop.opponent.home}`;
+  const opponent = identity
+    ? normalizeName(identity.teamName) === normalizeName(prop.opponent.home)
+      ? prop.opponent.away
+      : normalizeName(identity.teamName) === normalizeName(prop.opponent.away)
+        ? prop.opponent.home
+        : matchup
+    : matchup;
+  const playerKey = normalizeName(prop.player.name);
+  return {
+    id: `${prop.gameId}:${prop.market}:${playerKey}`,
+    game_id: prop.gameId,
+    player: toJson(player),
+    opponent,
+    sport: slug.toUpperCase(),
+    market: prop.market,
+    book_odds: toJson(prop.bookOdds),
+    recent_hit_rate: null,
+    matchup_context: null,
+    source: toJson({
+      source: "The Odds API",
+      retrievedAt: new Date().toISOString(),
+      sport: slug.toUpperCase(),
+      league: slug.toUpperCase(),
+      eventId: prop.gameId,
+      dataType: "fact",
+      freshness: "live",
+    } satisfies SourceMetadata),
+    updated_at: new Date().toISOString(),
+  };
+}
+
+async function syncPlayerProps(
+  slug: SportSlug,
+  games: MappedGame[],
+  apiKey: string,
+  supabase: ReturnType<typeof getSupabaseServerClient>,
+): Promise<{ count: number; errors: string[] }> {
+  const now = Date.now();
+  const candidates = games
+    .filter((game) => {
+      const startsAt = new Date(game.startsAt).getTime();
+      return startsAt >= now - 4 * 60 * 60 * 1000 && startsAt <= now + PROP_HORIZON_MS;
+    })
+    .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime())
+    .slice(0, PROP_EVENT_LIMIT);
+  if (candidates.length === 0) return { count: 0, errors: [] };
+
+  const athletes = await loadAthleteIdentities(supabase, slug, games[0]?.league ?? slug.toUpperCase());
+  const settled = await Promise.allSettled(
+    candidates.map((game) => fetchEventPlayerProps(slug, game.id, PROP_MARKETS[slug], apiKey)),
+  );
+  const errors: string[] = [];
+  const props = settled.flatMap((result, index) => {
+    if (result.status === "fulfilled") return result.value;
+    errors.push(`${candidates[index].id}: ${result.reason instanceof Error ? result.reason.message : String(result.reason)}`);
+    return [];
+  });
+  const rows = props.filter((prop) => prop.bookOdds.length > 0).map((prop) => propRow(slug, prop, athletes));
+
+  for (let index = 0; index < rows.length; index += 200) {
+    const { error } = await supabase.from("props").upsert(rows.slice(index, index + 200));
+    if (error) throw error;
+  }
+  return { count: rows.length, errors };
 }
 
 function buildMovementRows(game: MappedGame, eventLabel: string): MovementRow[] {
@@ -76,7 +213,7 @@ function buildMovementRows(game: MappedGame, eventLabel: string): MovementRow[] 
 }
 
 async function syncGames(apiKey: string, supabase: ReturnType<typeof getSupabaseServerClient>) {
-  const results: Record<string, { games: number; movements: number; signals: number; error?: string }> = {};
+  const results: Record<string, { games: number; props: number; movements: number; signals: number; propErrors?: string[]; error?: string }> = {};
 
   for (const slug of SPORT_SLUGS) {
     try {
@@ -112,6 +249,7 @@ async function syncGames(apiKey: string, supabase: ReturnType<typeof getSupabase
 
       let movementCount = 0;
       let signalCount = 0;
+      const propResult = await syncPlayerProps(slug, games, apiKey, supabase);
 
       for (const game of games) {
         const eventLabel = `${game.awayTeam.name} @ ${game.homeTeam.name}`;
@@ -200,10 +338,17 @@ async function syncGames(apiKey: string, supabase: ReturnType<typeof getSupabase
         }
       }
 
-      results[slug] = { games: games.length, movements: movementCount, signals: signalCount };
+      results[slug] = {
+        games: games.length,
+        props: propResult.count,
+        movements: movementCount,
+        signals: signalCount,
+        ...(propResult.errors.length > 0 ? { propErrors: propResult.errors } : {}),
+      };
     } catch (error) {
       results[slug] = {
         games: 0,
+        props: 0,
         movements: 0,
         signals: 0,
         error: error instanceof Error ? error.message : String(error),

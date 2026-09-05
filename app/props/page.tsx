@@ -11,8 +11,7 @@ export default async function PropsPage() {
       <div>
         <h1 className="text-xl font-semibold text-text">Player Prop Intelligence</h1>
         <p className="mt-1 text-sm text-text-muted">
-          No-vig consensus probability per prop. Empty for now — per-event player-prop odds ingestion isn&apos;t wired
-          into the sync-odds cron job yet (see SETUP.md).
+          Live player markets with sportsbook lines, no-vig consensus probability, and verified player identity.
         </p>
       </div>
       <PropsExplorer props={props} />
