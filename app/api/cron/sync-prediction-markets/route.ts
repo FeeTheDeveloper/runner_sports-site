@@ -4,7 +4,13 @@ import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { fetchPredictionMarkets } from "@/lib/providers/predictionMarkets";
 
 export const revalidate = 0;
-export const maxDuration = 60;
+export const maxDuration = 300;
+
+const WRITE_BATCH_SIZE = 500;
+
+function chunks<T>(values: T[], size = WRITE_BATCH_SIZE): T[][] {
+  return Array.from({ length: Math.ceil(values.length / size) }, (_, index) => values.slice(index * size, (index + 1) * size));
+}
 
 function toJson(value: Record<string, unknown>): Json {
   return value as Json;
@@ -45,8 +51,10 @@ async function handleSync(request: NextRequest) {
       source_timestamp: market.sourceTimestamp,
       updated_at: syncedAt,
     }));
-    const { error: currentError } = await supabase.from("prediction_markets").upsert(currentRows);
-    if (currentError) throw currentError;
+    for (const batch of chunks(currentRows)) {
+      const { error: currentError } = await supabase.from("prediction_markets").upsert(batch);
+      if (currentError) throw currentError;
+    }
 
     const snapshotRows = markets.map((market) => ({
       market_id: market.id,
@@ -58,8 +66,10 @@ async function handleSync(request: NextRequest) {
       volume: market.volume ?? null,
       captured_at: syncedAt,
     }));
-    const { error: snapshotError } = await supabase.from("prediction_market_snapshots").insert(snapshotRows);
-    if (snapshotError) throw snapshotError;
+    for (const batch of chunks(snapshotRows)) {
+      const { error: snapshotError } = await supabase.from("prediction_market_snapshots").insert(batch);
+      if (snapshotError) throw snapshotError;
+    }
   }
 
   const counts = markets.reduce<Record<string, number>>((totals, market) => {

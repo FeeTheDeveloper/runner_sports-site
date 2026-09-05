@@ -7,7 +7,7 @@ import { formatOdds, formatPercent, formatSignedPercent } from "@/lib/utils/form
 
 export const dynamic = "force-dynamic";
 
-const SPORTS = ["MLB", "NFL", "NCAAF", "NBA", "NHL"];
+const SPORTS = ["MLB", "NFL", "NCAAF", "NBA", "WNBA", "NHL"];
 
 export default async function PicksPage({ searchParams }: { searchParams: Promise<{ sport?: string; market?: string }> }) {
   const params = await searchParams;

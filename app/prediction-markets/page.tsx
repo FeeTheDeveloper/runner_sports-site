@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getPredictionMarkets } from "@/lib/data/predictionMarkets";
 import PredictionMarketCard from "@/components/markets/PredictionMarketCard";
 import DataStatusBadge from "@/components/ui/DataStatusBadge";
@@ -5,8 +6,9 @@ import EmptyState from "@/components/ui/EmptyState";
 
 export const dynamic = "force-dynamic";
 
-export default async function PredictionMarketsPage() {
-  const markets = await getPredictionMarkets({ status: "open", limit: 120 });
+export default async function PredictionMarketsPage({ searchParams }: { searchParams: Promise<{ provider?: "kalshi" | "polymarket" }> }) {
+  const { provider } = await searchParams;
+  const markets = await getPredictionMarkets({ provider, status: "open", limit: 250 });
   const kalshi = markets.filter((market) => market.provider === "kalshi").length;
   const polymarket = markets.filter((market) => market.provider === "polymarket").length;
 
@@ -21,6 +23,11 @@ export default async function PredictionMarketsPage() {
         <DataStatusBadge label="Live snapshots — Kalshi + Polymarket" />
       </div>
       <div className="flex gap-3 text-xs text-text-muted"><span>{kalshi} Kalshi</span><span>•</span><span>{polymarket} Polymarket</span></div>
+      <div className="flex flex-wrap gap-2">
+        <Link href="/prediction-markets" className="rounded-lg border border-border px-3 py-2 text-xs font-bold text-text-muted">All providers</Link>
+        <Link href="/prediction-markets?provider=kalshi" className="rounded-lg border border-border px-3 py-2 text-xs font-bold text-text-muted">Kalshi</Link>
+        <Link href="/prediction-markets?provider=polymarket" className="rounded-lg border border-border px-3 py-2 text-xs font-bold text-text-muted">Polymarket</Link>
+      </div>
       {markets.length > 0 ? (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{markets.map((market) => <PredictionMarketCard key={market.id} market={market} />)}</div>
       ) : (

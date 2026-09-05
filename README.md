@@ -78,7 +78,7 @@ All endpoints return JSON as `{ data, meta? }`; missing resources return a struc
 | `POST /api/tracker` | Body: `{ date, sport, event, selection, market, sportsbook, odds, stake, result?, closingOdds?, clv? }` |
 | `GET /api/tracker/:id` | None |
 | `GET /api/tracker/summary` | None |
-| `GET`/`POST /api/cron/sync-odds` | Requires `Authorization: Bearer $CRON_SECRET`. Pulls NFL, NCAAF, NBA, MLB, and NHL odds from The Odds API and upserts `games`/`market_movements`/`signals` in Supabase. |
+| `GET`/`POST /api/cron/sync-odds` | Requires `Authorization: Bearer $CRON_SECRET`. Pulls NFL, NCAAF, NBA, WNBA, MLB, and NHL odds from The Odds API and upserts `games`/`market_movements`/`signals` in Supabase. |
 | `GET`/`POST /api/cron/sync-prediction-markets` | Requires `Authorization: Bearer $CRON_SECRET`. Pulls read-only sports markets from Kalshi and Polymarket and stores current state plus snapshots. |
 | `GET`/`POST /api/cron/sync-espn` | Requires the cron bearer token. Pulls ESPN scoreboards, injuries, rosters, standings, and team facts into `espn_records`, and seeds the `team_registry` canonical identity. |
 | `GET /api/espn/records` | `sport`, `league`, `dataType`, `entityId`, `limit`, `offset` |

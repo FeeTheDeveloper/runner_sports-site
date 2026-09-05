@@ -6,7 +6,7 @@ import { formatOdds } from "@/lib/utils/format";
 
 export const dynamic = "force-dynamic";
 
-const SPORTS = ["MLB", "NFL", "NCAAF", "NBA", "NHL"];
+const SPORTS = ["MLB", "NFL", "NCAAF", "NBA", "WNBA", "NHL"];
 
 export default async function OddsPage({ searchParams }: { searchParams: Promise<{ sport?: string; window?: string; q?: string }> }) {
   const params = await searchParams;

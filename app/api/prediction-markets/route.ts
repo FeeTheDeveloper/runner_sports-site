@@ -16,6 +16,7 @@ export async function GET(request: NextRequest) {
   const limit = Number.isFinite(requestedLimit) ? Math.min(Math.max(Math.trunc(requestedLimit), 1), 250) : 100;
   const markets = await getPredictionMarkets({
     provider: provider as PredictionMarketProvider | undefined,
+    sport: params.get("sport") ?? undefined,
     status: params.get("status") ?? undefined,
     limit,
   });
