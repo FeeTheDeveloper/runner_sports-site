@@ -101,7 +101,12 @@ function fallbackTeamId(name: string): string {
 function toTeam(name: string, registry?: EspnTeamIdentityProvider): Team {
   const entry = registry?.resolve(name);
   if (entry) {
-    return { id: entry.id, name: entry.name, abbreviation: entry.abbreviation };
+    return {
+      id: entry.id,
+      name: entry.name,
+      abbreviation: entry.abbreviation,
+      logoUrl: entry.logoUrl,
+    };
   }
   return {
     id: fallbackTeamId(name),

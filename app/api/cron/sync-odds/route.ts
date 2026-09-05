@@ -11,6 +11,7 @@ import {
   type MappedPlayerPropMarket,
 } from "@/lib/providers/oddsApi";
 import { getTeamIdentityProvider } from "@/lib/data/teamRegistry";
+import { searchEspnAthlete } from "@/lib/providers/espnApi";
 import { americanToImpliedProbability, computeConsensusProbability, computeEdge, devigTwoWay } from "@/lib/models/edgeCalculator";
 import { authorizeCronRequest } from "../auth";
 
@@ -72,14 +73,31 @@ async function loadAthleteIdentities(
   slug: SportSlug,
   league: string,
 ): Promise<Map<string, AthleteIdentity>> {
-  const [{ data: rosterRows }, { data: teamRows }] = await Promise.all([
-    supabase.from("espn_records").select("entity_id, payload").eq("sport", slug).eq("data_type", "roster"),
+  const [rosterResult, teamResult, storedResult] = await Promise.all([
+    supabase.from("espn_records").select("entity_id, payload, retrieved_at").eq("sport", slug).eq("data_type", "roster").order("retrieved_at", { ascending: false }),
     supabase.from("team_registry").select("espn_id, name, abbreviation").eq("league", league),
+    supabase.from("props").select("player").eq("sport", slug.toUpperCase()).order("updated_at", { ascending: false }).limit(500),
   ]);
+  if (rosterResult.error) throw rosterResult.error;
+  if (teamResult.error) throw teamResult.error;
+  if (storedResult.error) throw storedResult.error;
+  const rosterRows = rosterResult.data;
+  const teamRows = teamResult.data;
   const teams = new Map(
     (teamRows ?? []).filter((team) => team.espn_id).map((team) => [team.espn_id as string, team]),
   );
   const identities = new Map<string, AthleteIdentity>();
+
+  for (const row of storedResult.data ?? []) {
+    const value = row.player;
+    if (!value || typeof value !== "object" || Array.isArray(value)) continue;
+    const player = value as unknown as Player;
+    if (!player.name || !player.headshotUrl) continue;
+    identities.set(normalizeName(player.name), {
+      ...player,
+      teamName: player.team,
+    });
+  }
 
   for (const row of rosterRows ?? []) {
     const team = teams.get(row.entity_id);
@@ -166,7 +184,49 @@ async function syncPlayerProps(
     errors.push(`${candidates[index].id}: ${result.reason instanceof Error ? result.reason.message : String(result.reason)}`);
     return [];
   });
-  const rows = props.filter((prop) => prop.bookOdds.length > 0).map((prop) => propRow(slug, prop, athletes));
+  const missingNames = Array.from(
+    new Set(props.map((prop) => prop.player.name).filter((name) => !athletes.has(normalizeName(name)))),
+  ).slice(0, 40);
+  const expectedTeamsByPlayer = new Map<string, Set<string>>();
+  for (const prop of props) {
+    const key = normalizeName(prop.player.name);
+    const teams = expectedTeamsByPlayer.get(key) ?? new Set<string>();
+    teams.add(prop.opponent.away);
+    teams.add(prop.opponent.home);
+    expectedTeamsByPlayer.set(key, teams);
+  }
+  const searched = await Promise.allSettled(
+    missingNames.map((name) => searchEspnAthlete(
+      slug,
+      name,
+      Array.from(expectedTeamsByPlayer.get(normalizeName(name)) ?? []),
+    )),
+  );
+  for (let index = 0; index < searched.length; index += 1) {
+    const result = searched[index];
+    if (result.status !== "fulfilled" || !result.value) continue;
+    const athlete = result.value;
+    athletes.set(normalizeName(missingNames[index]), {
+      id: `espn:${slug}:${athlete.espnId}`,
+      name: athlete.name,
+      team: athlete.teamName ?? "",
+      teamName: athlete.teamName ?? "",
+      position: athlete.position,
+      headshotUrl: athlete.headshotUrl,
+    });
+  }
+
+  // Provider spelling can vary by punctuation/diacritics. Merge rows that
+  // normalize to the same primary key before the Supabase upsert.
+  const mergedProps = new Map<string, MappedPlayerPropMarket>();
+  for (const prop of props) {
+    if (prop.bookOdds.length === 0) continue;
+    const rowId = `${prop.gameId}:${prop.market}:${normalizeName(prop.player.name)}`;
+    const existing = mergedProps.get(rowId);
+    if (existing) existing.bookOdds.push(...prop.bookOdds);
+    else mergedProps.set(rowId, { ...prop, bookOdds: [...prop.bookOdds] });
+  }
+  const rows = Array.from(mergedProps.values()).map((prop) => propRow(slug, prop, athletes));
 
   for (let index = 0; index < rows.length; index += 200) {
     const { error } = await supabase.from("props").upsert(rows.slice(index, index + 200));

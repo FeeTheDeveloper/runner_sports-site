@@ -4,6 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import ProbabilityBar from "@/components/ui/ProbabilityBar";
 import GameDetailTabs, { type GameTab } from "@/components/games/GameDetailTabs";
+import PlayerHeadshot from "@/components/sports/PlayerHeadshot";
+import TeamLogo from "@/components/sports/TeamLogo";
 import { formatOdds, formatPercent } from "@/lib/utils/format";
 import type { Game, PlayerProp } from "@/types";
 
@@ -19,9 +21,9 @@ export default function GameDetailView({ game, props }: { game: Game; props: Pla
         <section className="grid gap-4 lg:grid-cols-[1.1fr_.9fr]">
           <div className="data-panel p-6">
             <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4 text-center">
-              <Team name={game.awayTeam.name} abbr={game.awayTeam.abbreviation} odds={game.moneyline.away} />
+              <Team team={game.awayTeam} odds={game.moneyline.away} />
               <div><p className="text-[10px] font-bold uppercase tracking-widest text-text-subtle">{game.status}</p><p className="mt-2 text-sm font-black text-text">VS</p></div>
-              <Team name={game.homeTeam.name} abbr={game.homeTeam.abbreviation} odds={game.moneyline.home} />
+              <Team team={game.homeTeam} odds={game.moneyline.home} />
             </div>
             <div className="mt-7"><ProbabilityBar label={`Runner projects ${projected.abbreviation}`} value={game.modelProbability} /></div>
           </div>
@@ -53,9 +55,12 @@ export default function GameDetailView({ game, props }: { game: Game; props: Pla
           {props.length ? (
             <div className="mt-5 grid gap-2 sm:grid-cols-2">
               {props.map((prop) => (
-                <div key={prop.id} className="rounded-lg border border-border bg-canvas p-3">
-                  <p className="font-bold text-text">{prop.player.name}</p>
-                  <p className="mt-1 text-[10px] uppercase tracking-widest text-text-subtle">{prop.market} · {prop.line}</p>
+                <div key={prop.id} className="flex items-center gap-3 rounded-lg border border-border bg-canvas p-3">
+                  <PlayerHeadshot name={prop.player.name} headshotUrl={prop.player.headshotUrl} size="sm" />
+                  <div className="min-w-0">
+                    <p className="truncate font-bold text-text">{prop.player.name}</p>
+                    <p className="mt-1 truncate text-[10px] uppercase tracking-widest text-text-subtle">{prop.market.replaceAll("_", " ")} · {prop.line}</p>
+                  </div>
                 </div>
               ))}
             </div>
@@ -75,8 +80,8 @@ export default function GameDetailView({ game, props }: { game: Game; props: Pla
   );
 }
 
-function Team({ name, abbr, odds }: { name: string; abbr: string; odds: number }) {
-  return <div><div className="mx-auto grid h-16 w-16 place-items-center rounded-2xl border border-border-strong bg-canvas text-xl font-black text-text">{abbr}</div><p className="mt-3 text-sm font-bold text-text">{name}</p><p className="mt-1 font-mono text-sm text-accent">{odds === 0 ? "—" : formatOdds(odds)}</p></div>;
+function Team({ team, odds }: { team: Game["homeTeam"]; odds: number }) {
+  return <div className="flex flex-col items-center"><TeamLogo name={team.name} abbreviation={team.abbreviation} logoUrl={team.logoUrl} size="lg" /><p className="mt-3 text-sm font-bold text-text">{team.name}</p><p className="mt-1 font-mono text-sm text-accent">{odds === 0 ? "—" : formatOdds(odds)}</p></div>;
 }
 function Compare({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
   return <div className="flex items-center justify-between border-b border-border pb-3"><span className="text-sm text-text-muted">{label}</span><span className={`font-mono font-bold ${accent ? "text-accent" : "text-text"}`}>{value}</span></div>;

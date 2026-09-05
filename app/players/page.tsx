@@ -1,3 +1,21 @@
 import ProductHeading from "@/components/ui/ProductHeading";
-export default function PlayersPage(){return <div className="space-y-7"><ProductHeading eyebrow="Player Lab" title="Player Intelligence" description="Search athlete profiles, season statistics, game logs, splits, prop history, availability, projections, and matchup context."/><div className="data-panel p-5"><input className="w-full rounded-xl border border-border bg-canvas px-5 py-4 text-sm text-text outline-none focus:border-accent" placeholder="Search a player, team, position, or league…" aria-label="Search players"/></div><div className="grid gap-4 md:grid-cols-3"><PlayerFeature title="Performance" text="Season production, recent form, efficiency, workload, and role."/><PlayerFeature title="Matchup" text="Opponent strength, position defense, pace, venue, and availability."/><PlayerFeature title="Market" text="Current props, price history, projection range, and Runner edge."/></div></div>}
-function PlayerFeature({title,text}:{title:string;text:string}){return <div className="runner-card p-6"><p className="text-[10px] font-bold uppercase tracking-widest text-accent">{title}</p><p className="mt-3 text-sm leading-6 text-text-muted">{text}</p></div>}
+import PlayersExplorer from "@/app/players/PlayersExplorer";
+import { getProps } from "@/lib/data/props";
+
+export const dynamic = "force-dynamic";
+
+export default async function PlayersPage() {
+  const props = await getProps().catch(() => []);
+  const players = Array.from(new Map(props.map((prop) => [prop.player.id, prop.player])).values());
+
+  return (
+    <div className="space-y-7">
+      <ProductHeading
+        eyebrow="Player Lab"
+        title="Player Intelligence"
+        description="Live athlete identities connected to posted props, team context, market history, and Runner analysis."
+      />
+      <PlayersExplorer players={players} />
+    </div>
+  );
+}

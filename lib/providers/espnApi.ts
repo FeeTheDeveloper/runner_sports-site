@@ -33,6 +33,7 @@ import { sports } from "@/lib/data/sports";
 
 const ESPN_SITE_BASE = "https://site.api.espn.com/apis/site/v2/sports";
 const ESPN_WEB_BASE = "https://site.web.api.espn.com/apis/fitt/v3/sports";
+const ESPN_SEARCH_BASE = "https://site.api.espn.com/apis/search/v2";
 
 // Test hook: lets a harness point the provider at a fixture server. Not used
 // in production paths; the default bases above are restored with no argument.
@@ -611,6 +612,50 @@ export async function fetchRoster(sport: EspnSportSlug, teamId: string): Promise
   } catch {
     return [];
   }
+}
+
+/** Player identity fallback for prop markets when a team roster is unavailable. */
+export async function searchEspnAthlete(
+  sport: EspnSportSlug,
+  playerName: string,
+  expectedTeamNames: string[] = [],
+): Promise<EspnAthleteProfile | undefined> {
+  const payload = await fetchEspnRaw({
+    url: ESPN_SEARCH_BASE,
+    params: { query: playerName, limit: "25" },
+    cacheTtlMs: ROSTER_CACHE_TTL_MS,
+  });
+  const expectedLeague = sport === "ncaaf" ? "college-football" : sport;
+  const normalize = (value: string) => value.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
+  const target = normalize(playerName);
+  const expectedTeams = new Set(expectedTeamNames.map(normalize));
+  const candidates = asArray(payload.results)
+    .map(asRecord)
+    .filter((result) => asString(result?.type) === "player")
+    .flatMap((result) => asArray(result?.contents).map(asRecord))
+    .filter((value): value is JsonObject => Boolean(value));
+  const matches = candidates.filter((candidate) => {
+    const name = asString(candidate.displayName);
+    const league = asString(candidate.defaultLeagueSlug);
+    return Boolean(name && normalize(name) === target && league === expectedLeague);
+  });
+  const match = expectedTeams.size > 0
+    ? matches.find((candidate) => {
+        const teamName = asString(candidate.subtitle);
+        return Boolean(teamName && expectedTeams.has(normalize(teamName)));
+      })
+    : matches[0];
+  if (!match) return undefined;
+  const uid = asString(match.uid);
+  const espnId = uid?.match(/~a:(\d+)/)?.[1] ?? asString(match.id);
+  const name = asString(match.displayName);
+  if (!espnId || !name) return undefined;
+  return {
+    espnId,
+    name,
+    teamName: asString(match.subtitle),
+    headshotUrl: asString(asRecord(match.image)?.default),
+  };
 }
 
 /** League-wide injuries. Soft-fail: returns [] on error. */

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { EspnInjuryEntry, EspnRecordRow, EspnRosterAthlete } from "@/types";
+import PlayerHeadshot from "@/components/sports/PlayerHeadshot";
 
 const TABS = ["Overview", "Schedule", "Roster", "Injuries", "Stats", "Trends", "ATS", "O/U", "Odds", "News", "Models"] as const;
 type Tab = (typeof TABS)[number];
@@ -57,9 +58,12 @@ export default function TeamDetailTabs({
           roster && roster.length > 0 ? (
             <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
               {roster.map((athlete) => (
-                <div key={athlete.espnId} className="rounded-lg border border-border bg-canvas p-3">
-                  <p className="font-bold text-text">{athlete.name}</p>
-                  <p className="mt-1 text-[10px] uppercase tracking-widest text-text-subtle">{[athlete.position, athlete.jersey && `#${athlete.jersey}`].filter(Boolean).join(" · ") || "—"}</p>
+                <div key={athlete.espnId} className="flex items-center gap-3 rounded-lg border border-border bg-canvas p-3">
+                  <PlayerHeadshot name={athlete.name} headshotUrl={athlete.headshotUrl} size="sm" />
+                  <div className="min-w-0">
+                    <p className="truncate font-bold text-text">{athlete.name}</p>
+                    <p className="mt-1 text-[10px] uppercase tracking-widest text-text-subtle">{[athlete.position, athlete.jersey && `#${athlete.jersey}`].filter(Boolean).join(" · ") || "—"}</p>
+                  </div>
                 </div>
               ))}
             </div>
