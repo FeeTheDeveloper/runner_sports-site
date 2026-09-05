@@ -15,7 +15,7 @@ export default function PropsExplorer({ props }: { props: PlayerProp[] }) {
 
   const sports = useMemo(() => Array.from(new Set(props.map((p) => p.sport))), [props]);
   const markets = useMemo(() => Array.from(new Set(props.map((p) => p.market))), [props]);
-  const teams = useMemo(() => Array.from(new Set(props.map((p) => p.player.team))), [props]);
+  const teams = useMemo(() => Array.from(new Set(props.map((p) => p.player.team).filter(Boolean))), [props]);
 
   const filtered = props.filter((p) => {
     if (sport !== ALL && p.sport !== sport) return false;
@@ -46,7 +46,14 @@ export default function PropsExplorer({ props }: { props: PlayerProp[] }) {
           ))}
         </div>
       ) : (
-        <EmptyState title="No props match these filters" description="Try clearing one or more filters above." />
+        <EmptyState
+          title={props.length === 0 ? "No player props available yet" : "No props match these filters"}
+          description={
+            props.length === 0
+              ? "The next odds sync will load available player markets for nearby games."
+              : "Try clearing one or more filters above."
+          }
+        />
       )}
     </div>
   );

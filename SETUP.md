@@ -104,10 +104,9 @@ curl -X POST http://localhost:3000/api/cron/sync-espn -H "Authorization: Bearer 
 
 ## Known limitations (don't silently paper over these)
 
-- **Player props are not synced.** `lib/providers/oddsApi.ts` has `fetchEventPlayerProps`, but the cron job
-  (`app/api/cron/sync-odds/route.ts`) does not call it yet — The Odds API requires a separate per-event call for
-  prop markets, and the exact market keys available depend on your plan tier. `/props` will stay empty until this
-  is wired up.
+- **Player-prop coverage varies by event and sportsbook.** The odds cron requests three primary O/U markets for
+  the nearest four events per sport inside a 36-hour window. The bounded window controls API credit usage; `/props`
+  can still be empty when sportsbooks have not posted props for the upcoming slate.
 - **No bettor-consensus/handle data.** `signals.movement.consensus` is a literal `"N/A — ..."` string, not a
   fabricated percentage — The Odds API doesn't expose public betting percentages.
 - **No independent player-performance projections.** `PlayerProp.projection`, `recentHitRate`, and `matchupContext`

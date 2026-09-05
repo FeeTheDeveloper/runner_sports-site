@@ -62,7 +62,11 @@ function mapRowToProp(row: PropRow): PlayerProp {
 
 export async function getProps(): Promise<PlayerProp[]> {
   const supabase = getSupabaseServerClient();
-  const { data, error } = await supabase.from("props").select("*");
+  const { data, error } = await supabase
+    .from("props")
+    .select("*")
+    .order("updated_at", { ascending: false })
+    .limit(500);
   if (error) throw error;
   return (data as unknown as PropRow[]).map(mapRowToProp);
 }

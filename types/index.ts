@@ -33,6 +33,7 @@ export interface Player {
   name: string;
   team: string;
   position?: string;
+  headshotUrl?: string;
 }
 
 export interface SourceMetadata {
@@ -120,6 +121,7 @@ export interface EspnRosterAthlete {
   height?: string;
   weight?: number;
   age?: number;
+  headshotUrl?: string;
 }
 
 export interface EspnInjuryEntry {

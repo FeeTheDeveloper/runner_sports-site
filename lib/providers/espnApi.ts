@@ -348,6 +348,7 @@ function mapRosterAthlete(raw: unknown): EspnRosterAthlete | undefined {
     height: asString(athlete?.displayHeight),
     weight: asNumber(athlete?.displayWeight ?? athlete?.weight),
     age: asNumber(athlete?.age),
+    headshotUrl: asString(asRecord(athlete?.headshot)?.href),
   };
 }
 
@@ -597,7 +598,16 @@ export async function fetchTeam(sport: EspnSportSlug, teamId: string): Promise<E
 export async function fetchRoster(sport: EspnSportSlug, teamId: string): Promise<EspnRosterAthlete[]> {
   try {
     const payload = await espnRequest(sport, `teams/${teamId}/roster`, { cacheTtlMs: ROSTER_CACHE_TTL_MS });
-    return asArray(payload.athletes).map(mapRosterAthlete).filter((a): a is EspnRosterAthlete => Boolean(a));
+    // ESPN groups most rosters as [{ position, items: Athlete[] }], while a
+    // few endpoints still return a flat Athlete[]. Support both shapes.
+    return asArray(payload.athletes)
+      .flatMap((groupOrAthlete) => {
+        const group = asRecord(groupOrAthlete);
+        const items = asArray(group?.items);
+        return items.length > 0 ? items : [groupOrAthlete];
+      })
+      .map(mapRosterAthlete)
+      .filter((a): a is EspnRosterAthlete => Boolean(a));
   } catch {
     return [];
   }

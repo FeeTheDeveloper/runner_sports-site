@@ -18,12 +18,14 @@ type SportSlug = keyof typeof ODDS_API_SPORT_KEYS;
 // The Odds API's raw response shapes (subset of fields we use).
 interface OddsApiOutcome {
   name: string;
+  description?: string;
   price: number;
   point?: number;
 }
 
 interface OddsApiMarket {
   key: "h2h" | "spreads" | "totals" | string;
+  last_update?: string;
   outcomes: OddsApiOutcome[];
 }
 
@@ -219,6 +221,7 @@ export async function fetchSportOdds(
 export interface MappedPlayerPropMarket {
   gameId: string;
   sport: string;
+  player: Player;
   opponent: { home: string; away: string };
   market: string;
   bookOdds: { sportsbook: string; line: number; overOdds: number; underOdds: number; capturedAt: string }[];
@@ -258,19 +261,44 @@ export async function fetchEventPlayerProps(
     for (const market of bookmaker.markets) {
       if (!marketKeys.includes(market.key)) continue;
 
-      // Odds API groups prop outcomes by player name within a market, with
-      // "description" carrying the player and "name" carrying Over/Under —
-      // grouping logic intentionally left to the caller once real market
-      // payloads are available to verify the exact outcome shape.
-      const existing = byMarket.get(market.key);
-      const entry: MappedPlayerPropMarket = existing ?? {
-        gameId: event.id,
-        sport: event.sport_title,
-        opponent: { home: event.home_team, away: event.away_team },
-        market: market.key,
-        bookOdds: [],
-      };
-      byMarket.set(market.key, entry);
+      const outcomesByPlayer = new Map<string, OddsApiOutcome[]>();
+      for (const outcome of market.outcomes) {
+        const playerName = outcome.description?.trim();
+        if (!playerName) continue;
+        const current = outcomesByPlayer.get(playerName) ?? [];
+        current.push(outcome);
+        outcomesByPlayer.set(playerName, current);
+      }
+
+      for (const [playerName, outcomes] of outcomesByPlayer) {
+        const over = outcomes.find((outcome) => outcome.name.toLowerCase() === "over");
+        const under = outcomes.find((outcome) => outcome.name.toLowerCase() === "under");
+        if (!over || !under || typeof over.point !== "number") continue;
+
+        const playerSlug = playerName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+        const mapKey = `${market.key}:${playerSlug}`;
+        const existing = byMarket.get(mapKey);
+        const entry: MappedPlayerPropMarket = existing ?? {
+          gameId: event.id,
+          sport: event.sport_title,
+          player: {
+            id: `oddsapi:${sportSlug}:${playerSlug}`,
+            name: playerName,
+            team: "",
+          },
+          opponent: { home: event.home_team, away: event.away_team },
+          market: market.key,
+          bookOdds: [],
+        };
+        entry.bookOdds.push({
+          sportsbook: bookmaker.title,
+          line: over.point,
+          overOdds: over.price,
+          underOdds: under.price,
+          capturedAt: market.last_update ?? bookmaker.last_update,
+        });
+        byMarket.set(mapKey, entry);
+      }
     }
   }
 
