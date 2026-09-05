@@ -53,6 +53,24 @@ export interface Market {
   type: "moneyline" | "spread" | "total" | "prop";
 }
 
+export type MarketConfirmationStatus = "confirmed" | "strong_consensus" | "thin" | "rejected";
+
+export interface ConfirmedMarket {
+  marketKey: string;
+  participant?: string;
+  point: number;
+  bookCount: number;
+  status: MarketConfirmationStatus;
+  bestOver?: { sportsbook: string; price: number };
+  bestUnder?: { sportsbook: string; price: number };
+  medianOverPrice?: number;
+  medianUnderPrice?: number;
+  overround?: number;
+  noVigOverProbability?: number;
+  noVigUnderProbability?: number;
+  updatedAt: string;
+}
+
 // MULTI-PROVIDER IDENTITY + LINEAGE
 // The Odds API remains the market-pricing source of truth; ESPN is the
 // sports-facts/enrichment provider (teams, rosters, injuries, standings,
@@ -289,6 +307,7 @@ export interface Game {
   marketImpliedProbability: number;
   confidence: Confidence;
   keyFactors: string[];
+  confirmedMarkets?: ConfirmedMarket[];
   source: SourceMetadata;
 }
 

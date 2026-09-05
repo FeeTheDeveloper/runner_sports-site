@@ -8,6 +8,7 @@ import {
   devigTwoWay,
 } from "@/lib/models/edgeCalculator";
 import type { BookOddsSnapshot } from "@/lib/providers/oddsApi";
+import { confirmDerivativeMarkets } from "@/lib/models/marketConfirmation";
 import { resolveTeamSearchNames } from "@/lib/data/teamRegistry";
 
 interface GameRow {
@@ -84,6 +85,7 @@ export function mapRowToGame(row: GameRow): Game {
       : Math.round(favoriteFairProbability * 1000) / 1000,
     confidence,
     keyFactors: buildRunnerFactors(row, moneylineBooks.length, favoriteFairProbability),
+    confirmedMarkets: confirmDerivativeMarkets(row.book_odds),
     source: row.source,
   };
 }

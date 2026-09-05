@@ -5,7 +5,10 @@ import { getSupabaseServerClient } from "@/lib/supabase/server";
 import type { Json } from "@/lib/supabase/database.types";
 import {
   fetchEventPlayerProps,
+  fetchEventMarkets,
   fetchSportOdds,
+  mergeEventMarkets,
+  DERIVATIVE_MARKETS,
   type EspnTeamIdentityProvider,
   type MappedGame,
   type MappedPlayerPropMarket,
@@ -33,6 +36,7 @@ const PROP_MARKETS: Record<SportSlug, string[]> = {
 };
 const PROP_EVENT_LIMIT = 4;
 const PROP_HORIZON_MS = 36 * 60 * 60 * 1000;
+const DERIVATIVE_EVENT_LIMIT = 20;
 
 // Our domain types (Team, SourceMetadata, BookOddsSnapshot[], ...) are known
 // to be plain JSON-serializable data, but don't structurally satisfy the
@@ -286,7 +290,30 @@ async function syncGames(apiKey: string, supabase: ReturnType<typeof getSupabase
       } catch {
         registry = undefined;
       }
-      const games = await fetchSportOdds(slug, apiKey, registry);
+      let games = await fetchSportOdds(slug, apiKey, registry);
+
+      // The provider exposes team, half and quarter totals only through the
+      // per-event endpoint. Keep the extra calls focused on the nearest NCAAF
+      // slate and preserve raw book/point/price records inside book_odds.
+      if (slug === "ncaaf") {
+        const now = Date.now();
+        const candidates = games
+          .filter((game) => new Date(game.startsAt).getTime() >= now - 4 * 60 * 60 * 1000)
+          .sort((a, b) => new Date(a.startsAt).getTime() - new Date(b.startsAt).getTime())
+          .slice(0, DERIVATIVE_EVENT_LIMIT);
+        const derivativeResults = await Promise.allSettled(
+          candidates.map((game) => fetchEventMarkets(slug, game.id, DERIVATIVE_MARKETS, apiKey)),
+        );
+        const derivativesByGame = new Map(
+          derivativeResults.flatMap((result, index) => result.status === "fulfilled"
+            ? [[candidates[index].id, result.value] as const]
+            : []),
+        );
+        games = games.map((game) => {
+          const derivativeBooks = derivativesByGame.get(game.id);
+          return derivativeBooks ? mergeEventMarkets(game, derivativeBooks) : game;
+        });
+      }
 
       if (games.length > 0) {
         const { error: gamesError } = await supabase.from("games").upsert(
