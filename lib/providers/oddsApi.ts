@@ -47,11 +47,24 @@ interface OddsApiEvent {
 }
 
 export interface BookOddsSnapshot {
+  sportsbookKey: string;
   sportsbook: string;
   capturedAt: string;
   moneyline?: { home: number; away: number };
   spread?: { home: number; away: number; line: number };
   total?: { line: number; over: number; under: number };
+  markets?: BookMarketSnapshot[];
+}
+
+export interface BookMarketSnapshot {
+  marketKey: string;
+  capturedAt: string;
+  outcomes: {
+    name: string;
+    description?: string;
+    point?: number;
+    price: number;
+  }[];
 }
 
 export interface MappedGame {
@@ -126,8 +139,17 @@ function toGameStatus(commenceTime: string): GameStatus {
   return new Date(commenceTime).getTime() <= Date.now() ? "live" : "scheduled";
 }
 
+function isAmericanPrice(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value) && value !== 0 && (value >= 100 || value <= -100);
+}
+
+function isPoint(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value) && Math.abs(value) <= 1000;
+}
+
 function extractBookOdds(bookmaker: OddsApiBookmaker, homeTeam: string, awayTeam: string): BookOddsSnapshot {
   const snapshot: BookOddsSnapshot = {
+    sportsbookKey: bookmaker.key,
     sportsbook: bookmaker.title,
     capturedAt: bookmaker.last_update,
   };
@@ -136,7 +158,7 @@ function extractBookOdds(bookmaker: OddsApiBookmaker, homeTeam: string, awayTeam
   if (h2h) {
     const home = h2h.outcomes.find((o) => o.name === homeTeam);
     const away = h2h.outcomes.find((o) => o.name === awayTeam);
-    if (home && away) {
+    if (home && away && isAmericanPrice(home.price) && isAmericanPrice(away.price)) {
       snapshot.moneyline = { home: home.price, away: away.price };
     }
   }
@@ -145,7 +167,11 @@ function extractBookOdds(bookmaker: OddsApiBookmaker, homeTeam: string, awayTeam
   if (spreads) {
     const home = spreads.outcomes.find((o) => o.name === homeTeam);
     const away = spreads.outcomes.find((o) => o.name === awayTeam);
-    if (home && away && typeof home.point === "number" && typeof away.point === "number") {
+    if (
+      home && away && isPoint(home.point) && isPoint(away.point) &&
+      Math.abs(home.point + away.point) < 0.001 &&
+      isAmericanPrice(home.price) && isAmericanPrice(away.price)
+    ) {
       snapshot.spread = { home: home.price, away: away.price, line: home.point };
     }
   }
@@ -154,12 +180,77 @@ function extractBookOdds(bookmaker: OddsApiBookmaker, homeTeam: string, awayTeam
   if (totals) {
     const over = totals.outcomes.find((o) => o.name === "Over");
     const under = totals.outcomes.find((o) => o.name === "Under");
-    if (over && under && typeof over.point === "number") {
+    if (
+      over && under && isPoint(over.point) && isPoint(under.point) &&
+      Math.abs(over.point - under.point) < 0.001 &&
+      isAmericanPrice(over.price) && isAmericanPrice(under.price)
+    ) {
       snapshot.total = { line: over.point, over: over.price, under: under.price };
     }
   }
 
   return snapshot;
+}
+
+export const DERIVATIVE_MARKETS = [
+  "team_totals",
+  "totals_h1",
+  "totals_q1",
+  "team_totals_h1",
+  "team_totals_q1",
+] as const;
+
+/** Fetches event-level derivative markets while preserving book, point and price. */
+export async function fetchEventMarkets(
+  sportSlug: SportSlug,
+  eventId: string,
+  marketKeys: readonly string[],
+  apiKey: string | undefined,
+): Promise<BookOddsSnapshot[]> {
+  const key = assertApiKey(apiKey);
+  if (marketKeys.length === 0) return [];
+  const sportKey = ODDS_API_SPORT_KEYS[sportSlug];
+  const url = new URL(`${ODDS_API_BASE}/sports/${sportKey}/events/${eventId}/odds`);
+  url.searchParams.set("apiKey", key);
+  url.searchParams.set("regions", "us,us2");
+  url.searchParams.set("markets", marketKeys.join(","));
+  url.searchParams.set("oddsFormat", "american");
+
+  const response = await fetch(url, { cache: "no-store" });
+  if (!response.ok) {
+    throw new Error(`The Odds API event-markets request failed (${response.status}): ${await response.text()}`);
+  }
+  const event: OddsApiEvent = await response.json();
+  return event.bookmakers.map((bookmaker) => ({
+    sportsbookKey: bookmaker.key,
+    sportsbook: bookmaker.title,
+    capturedAt: bookmaker.last_update,
+    markets: bookmaker.markets.flatMap((market): BookMarketSnapshot[] => {
+      if (!marketKeys.includes(market.key)) return [];
+      const outcomes = market.outcomes.filter((outcome) =>
+        isAmericanPrice(outcome.price) && (outcome.point === undefined || isPoint(outcome.point)),
+      );
+      return outcomes.length >= 2 ? [{
+        marketKey: market.key,
+        capturedAt: market.last_update ?? bookmaker.last_update,
+        outcomes,
+      }] : [];
+    }),
+  })).filter((book) => (book.markets?.length ?? 0) > 0);
+}
+
+export function mergeEventMarkets(game: MappedGame, derivativeBooks: BookOddsSnapshot[]): MappedGame {
+  const merged = new Map(game.bookOdds.map((book) => [book.sportsbookKey, { ...book }]));
+  for (const derivative of derivativeBooks) {
+    const existing = merged.get(derivative.sportsbookKey);
+    if (existing) {
+      existing.markets = derivative.markets;
+      existing.capturedAt = existing.capturedAt > derivative.capturedAt ? existing.capturedAt : derivative.capturedAt;
+    } else {
+      merged.set(derivative.sportsbookKey, derivative);
+    }
+  }
+  return { ...game, bookOdds: Array.from(merged.values()) };
 }
 
 function mapEventToGame(event: OddsApiEvent, sport: Sport, registry?: EspnTeamIdentityProvider): MappedGame {
@@ -210,7 +301,7 @@ export async function fetchSportOdds(
   const sportKey = ODDS_API_SPORT_KEYS[sportSlug];
   const url = new URL(`${ODDS_API_BASE}/sports/${sportKey}/odds`);
   url.searchParams.set("apiKey", key);
-  url.searchParams.set("regions", "us");
+  url.searchParams.set("regions", "us,us2");
   url.searchParams.set("markets", "h2h,spreads,totals");
   url.searchParams.set("oddsFormat", "american");
 
