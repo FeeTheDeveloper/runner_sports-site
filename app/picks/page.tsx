@@ -4,6 +4,7 @@ import FilterBar from "@/components/ui/FilterBar";
 import { getEdges } from "@/lib/data/edges";
 import { getProps } from "@/lib/data/props";
 import { formatOdds, formatPercent, formatSignedPercent } from "@/lib/utils/format";
+import PlayerHeadshot from "@/components/sports/PlayerHeadshot";
 
 export const dynamic = "force-dynamic";
 
@@ -26,7 +27,7 @@ export default async function PicksPage({ searchParams }: { searchParams: Promis
           <Link href="/edge" className="mt-5 flex items-center justify-between border-t border-border pt-4 text-xs font-bold text-text">Why Runner likes it <span className="text-accent">Analyze →</span></Link></div>
         </article>
       ))}</div> : <EmptyBoard />}
-      <section><div className="mb-3 flex items-end justify-between"><div><p className="text-[10px] font-bold uppercase tracking-widest text-accent">Player Lab</p><h2 className="mt-1 text-xl font-bold text-text">Trending Player Props</h2></div><Link href="/props" className="text-xs font-semibold text-accent">View all →</Link></div><div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{props.slice(0,4).map(prop => <div key={prop.id} className="runner-card p-4"><p className="text-xs text-text-subtle">{prop.player.name} · {prop.market}</p><p className="mt-2 font-bold text-text">OVER {prop.line}</p><p className="mt-3 text-xs text-text-muted">Runner probability <span className="font-mono text-text">{formatPercent(prop.probability)}</span></p></div>)}</div></section>
+      <section><div className="mb-3 flex items-end justify-between"><div><p className="text-[10px] font-bold uppercase tracking-widest text-accent">Player Lab</p><h2 className="mt-1 text-xl font-bold text-text">Trending Player Props</h2></div><Link href="/props" className="text-xs font-semibold text-accent">View all →</Link></div><div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">{props.slice(0,4).map(prop => <div key={prop.id} className="runner-card p-4"><div className="flex items-center gap-3"><PlayerHeadshot name={prop.player.name} headshotUrl={prop.player.headshotUrl} size="sm"/><div className="min-w-0"><p className="truncate text-sm font-bold text-text">{prop.player.name}</p><p className="truncate text-[10px] uppercase tracking-wider text-text-subtle">{prop.player.team || prop.sport}</p></div></div><p className="mt-3 text-xs text-text-subtle">{prop.market.replaceAll("_", " ")}</p><p className="mt-1 font-bold text-text">OVER {prop.line}</p><p className="mt-3 text-xs text-text-muted">Runner probability <span className="font-mono text-text">{formatPercent(prop.probability)}</span></p></div>)}</div></section>
     </div>
   );
 }

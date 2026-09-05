@@ -2,6 +2,7 @@ import type { Game } from "@/types";
 import Badge from "@/components/ui/Badge";
 import ConfidenceBadge from "@/components/ui/ConfidenceBadge";
 import ProbabilityBar from "@/components/ui/ProbabilityBar";
+import TeamLogo from "@/components/sports/TeamLogo";
 import { formatLine, formatOdds, formatTime } from "@/lib/utils/format";
 
 interface GameCardProps {
@@ -64,11 +65,14 @@ export default function GameCard({ game, showFactors = false }: GameCardProps) {
 
 function TeamColumn({ label, team, moneyline }: { label: string; team: Game["homeTeam"]; moneyline: number }) {
   return (
-    <div>
-      <p className="text-[10px] uppercase tracking-wide text-text-subtle">{label}</p>
-      <p className="text-sm font-semibold text-text truncate">{team.abbreviation}</p>
-      <p className="text-xs text-text-muted">{team.record}</p>
-      <p className="mt-1 font-mono text-xs text-text">{formatOdds(moneyline)}</p>
+    <div className="flex min-w-0 items-center gap-3">
+      <TeamLogo name={team.name} abbreviation={team.abbreviation} logoUrl={team.logoUrl} size="md" />
+      <div className="min-w-0">
+        <p className="text-[10px] uppercase tracking-wide text-text-subtle">{label}</p>
+        <p className="truncate text-sm font-semibold text-text">{team.abbreviation}</p>
+        <p className="truncate text-[10px] text-text-muted">{team.name}</p>
+        <p className="mt-1 font-mono text-xs text-text">{formatOdds(moneyline)}</p>
+      </div>
     </div>
   );
 }

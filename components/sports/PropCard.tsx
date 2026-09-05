@@ -1,8 +1,8 @@
 import type { PlayerProp } from "@/types";
-import Image from "next/image";
 import Badge from "@/components/ui/Badge";
 import ConfidenceBadge from "@/components/ui/ConfidenceBadge";
 import ProbabilityBar from "@/components/ui/ProbabilityBar";
+import PlayerHeadshot from "@/components/sports/PlayerHeadshot";
 import { formatOdds, formatPercent, formatSignedPercent } from "@/lib/utils/format";
 
 const MARKET_LABELS: Record<string, string> = {
@@ -25,19 +25,12 @@ function marketLabel(market: string): string {
 
 export default function PropCard({ prop }: { prop: PlayerProp }) {
   const isOverLean = prop.edge >= 0;
-  const initials = prop.player.name.split(/\s+/).map((part) => part[0]).join("").slice(0, 2).toUpperCase();
 
   return (
     <div className="rounded-lg border border-border bg-surface p-4 flex flex-col gap-3">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
-          <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border-strong bg-surface-2 text-xs font-bold text-accent">
-            {prop.player.headshotUrl ? (
-              <Image src={prop.player.headshotUrl} alt="" fill sizes="44px" className="object-cover" />
-            ) : (
-              <span aria-hidden="true">{initials}</span>
-            )}
-          </div>
+          <PlayerHeadshot name={prop.player.name} headshotUrl={prop.player.headshotUrl} />
           <div className="min-w-0">
             <p className="truncate text-sm font-semibold text-text">{prop.player.name}</p>
             <p className="truncate text-xs text-text-muted">

@@ -26,6 +26,7 @@ export interface Team {
   name: string;
   abbreviation: string;
   record?: string;
+  logoUrl?: string;
 }
 
 export interface Player {
@@ -152,6 +153,7 @@ export interface EspnAthleteProfile {
   espnId: string;
   name: string;
   teamId?: string;
+  teamName?: string;
   position?: string;
   jersey?: string;
   height?: string;
