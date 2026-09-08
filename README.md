@@ -74,6 +74,12 @@ All endpoints return JSON as `{ data, meta? }`; missing resources return a struc
 | `GET /api/prediction-markets` | `provider`, `status`, `limit` |
 | `GET /api/signals` | `market`, `direction`, `limit`, `offset` |
 | `GET /api/signals/:id` | None |
+| `GET /api/runner/status` | None |
+| `GET /api/runner/live` | `sport`, `event`/`eventId`, `limit`, `maxAgeMinutes` |
+| `GET /api/runner/signals` | `sport`, `event`/`eventId`, `limit`, `maxAgeMinutes` |
+| `GET /api/runner/game-flow` | `sport`, `event`/`eventId`, `limit`, `maxAgeMinutes` |
+| `GET /api/runner/totals` | `sport`, `event`/`eventId`, `limit`, `maxAgeMinutes` |
+| `GET /api/runner/pick-health` | `sport`, `event`/`eventId`, `limit`, `maxAgeMinutes` |
 | `GET /api/tracker` | `sport`, `result`, `limit`, `offset` |
 | `POST /api/tracker` | Body: `{ date, sport, event, selection, market, sportsbook, odds, stake, result?, closingOdds?, clv? }` |
 | `GET /api/tracker/:id` | None |
@@ -85,19 +91,21 @@ All endpoints return JSON as `{ data, meta? }`; missing resources return a struc
 | `POST /api/checkout` | Authenticated Stripe Checkout Session creation by Runner plan key |
 | `POST /api/billing/portal` | Authenticated Stripe Customer Portal session creation |
 | `POST /api/webhooks/stripe` | Signature-verified subscription lifecycle webhook |
-| `GET`/`POST /mcp` | Streamable HTTP MCP connector for Runner search, plays, and matchup analysis |
+| `GET`/`POST /mcp` | Streamable HTTP MCP connector for Runner search, plays, matchup analysis, bounded published intelligence, and token-protected allowlisted control requests |
 
 ## Runner MCP connector
 
-The production connector URL is `https://werunsportsandanalytics.com/mcp`. It is a read-only,
-tool-only MCP server with standard `search` and `fetch` tools plus `get_best_plays` and
-`run_matchup_analysis`. It exposes analytics and source timestamps; it cannot place wagers.
+The production connector URL is `https://werunsportsandanalytics.com/mcp`. It is a tool-only
+MCP server with standard `search` and `fetch` tools, matchup/edge analysis, bounded published
+intelligence reads, and separately authenticated allowlisted control requests. It exposes
+analytics and source timestamps; it cannot place wagers or execute arbitrary commands.
 
 Validate locally with MCP Inspector against `http://localhost:3000/mcp`, then add the production
 HTTPS URL as a custom app/connector in ChatGPT Developer Mode after deployment.
 
 `lib/data/*.ts` read from Supabase, which is populated by the `sync-odds`, `sync-espn`, and
-`sync-prediction-markets` cron jobs — see
+`sync-prediction-markets` cron jobs plus the Demon `runner_*` published-intelligence
+contract — see
 [SETUP.md](./SETUP.md) for required environment variables, provisioning, and known limitations.
 
 ## Environment variables

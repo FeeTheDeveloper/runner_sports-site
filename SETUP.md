@@ -47,6 +47,8 @@ STRIPE_WEBHOOK_SECRET=
 STRIPE_PRICE_RUNNER_PRO=
 STRIPE_PRICE_RUNNER_COMMAND=
 NEXT_PUBLIC_APP_URL=https://werunsportsandanalytics.com
+RUNNER_DEMON_API_URL=http://localhost:8787
+RUNNER_MCP_BEARER_TOKEN=
 ```
 
 Encode the downloaded Kalshi private-key file before placing it in a multiline-hostile environment-variable UI:
@@ -101,6 +103,8 @@ curl -X POST http://localhost:3000/api/cron/sync-espn -H "Authorization: Bearer 
    tax until a business tax registration has been added in Stripe Tax.
 5. After deployment, connect `https://werunsportsandanalytics.com/mcp` in ChatGPT Developer Mode
    and rescan/refresh the connector whenever MCP tool metadata changes.
+   6. Apply the Runner published-intelligence migration and set the optional
+      `RUNNER_MCP_BEARER_TOKEN` only when authenticated MCP control commands are needed.
 
 ## Known limitations (don't silently paper over these)
 

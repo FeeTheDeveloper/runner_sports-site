@@ -1,7 +1,13 @@
-// Generated from the live Supabase schema (supabase/migrations/0001_init.sql,
-// 0002_multi_provider.sql) via the Supabase MCP `generate_typescript_types`.
-// Regenerate after any migration change rather than hand-editing this file.
+// Generated from the live Supabase schema. RunnerTable captures the published
+// intelligence contract until the hosted project's generated types are refreshed.
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
+
+type RunnerTable = {
+  Row: Record<string, Json | undefined>;
+  Insert: Record<string, Json | undefined>;
+  Update: Record<string, Json | undefined>;
+  Relationships: [];
+};
 
 export type Database = {
   __InternalSupabase: {
@@ -419,6 +425,17 @@ export type Database = {
         };
         Relationships: [];
       };
+      runner_published_intelligence: RunnerTable;
+      runner_forecasts: RunnerTable;
+      runner_pick_health: RunnerTable;
+      runner_game_flow: RunnerTable;
+      runner_signals: RunnerTable;
+      runner_totals: RunnerTable;
+      runner_engine_status: RunnerTable;
+      runner_provider_status: RunnerTable;
+      runner_research_evidence: RunnerTable;
+      runner_control_commands: RunnerTable;
+      runner_control_results: RunnerTable;
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;
