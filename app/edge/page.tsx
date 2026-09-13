@@ -1,9 +1,14 @@
 import { getEdges } from "@/lib/data/edges";
 import EdgeBoard from "@/app/edge/EdgeBoard";
+import { getRunnerAccess } from "@/lib/auth/access";
+import Paywall from "@/components/auth/Paywall";
 
 export const dynamic = "force-dynamic";
 
 export default async function EdgePage() {
+  const access = await getRunnerAccess();
+  if (!access.fullAccess) return <Paywall feature="The Runner Edge board" />;
+
   const edges = await getEdges();
 
   return (

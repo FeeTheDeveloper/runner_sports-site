@@ -15,12 +15,17 @@ import ConfidenceBadge from "@/components/ui/ConfidenceBadge";
 import TrendIndicator from "@/components/ui/TrendIndicator";
 import EmptyState from "@/components/ui/EmptyState";
 import { formatOdds, formatPercent, formatSignedPercent, formatCurrency } from "@/lib/utils/format";
+import { getRunnerAccess } from "@/lib/auth/access";
+import Paywall from "@/components/auth/Paywall";
 
 export const dynamic = "force-dynamic";
 
 const confidenceScore = { high: 1, moderate: 0.66, low: 0.33 } as const;
 
 export default async function DashboardPage() {
+  const access = await getRunnerAccess();
+  if (!access.fullAccess) return <Paywall feature="The executive dashboard" />;
+
   const [games, props, edges, signals, tracker] = await Promise.all([
     getGames(),
     getProps(),

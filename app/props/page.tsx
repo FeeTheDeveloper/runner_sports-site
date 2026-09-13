@@ -1,9 +1,14 @@
 import { getProps } from "@/lib/data/props";
 import PropsExplorer from "@/app/props/PropsExplorer";
+import { getRunnerAccess } from "@/lib/auth/access";
+import Paywall from "@/components/auth/Paywall";
 
 export const dynamic = "force-dynamic";
 
 export default async function PropsPage() {
+  const access = await getRunnerAccess();
+  if (!access.fullAccess) return <Paywall feature="Player prop intelligence" />;
+
   const props = await getProps();
 
   return (

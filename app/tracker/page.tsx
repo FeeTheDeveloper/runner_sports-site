@@ -5,6 +5,8 @@ import SportsTable from "@/components/ui/SportsTable";
 import Badge from "@/components/ui/Badge";
 import { formatCurrency, formatDate, formatMoney, formatOdds, formatSignedPercent } from "@/lib/utils/format";
 import type { TrackedBet } from "@/types";
+import { getRunnerAccess } from "@/lib/auth/access";
+import Paywall from "@/components/auth/Paywall";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +36,9 @@ function summarizeBySport(bets: TrackedBet[]) {
 }
 
 export default async function TrackerPage() {
+  const access = await getRunnerAccess();
+  if (!access.fullAccess) return <Paywall feature="The Runner Tracker" />;
+
   const [bets, summary] = await Promise.all([getTrackedBets(), getTrackerSummary()]);
   const bySport = summarizeBySport(bets);
 

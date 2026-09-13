@@ -1,6 +1,8 @@
 import { getModels } from "@/lib/data/models";
 import Badge from "@/components/ui/Badge";
 import { formatPercent, formatSignedPercent, formatDate } from "@/lib/utils/format";
+import { getRunnerAccess } from "@/lib/auth/access";
+import Paywall from "@/components/auth/Paywall";
 
 const statusVariant = {
   active: "success",
@@ -10,6 +12,9 @@ const statusVariant = {
 } as const;
 
 export default async function ModelsPage() {
+  const access = await getRunnerAccess();
+  if (!access.fullAccess) return <Paywall feature="Model releases" />;
+
   const models = await getModels();
 
   return (

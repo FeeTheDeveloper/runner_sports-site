@@ -3,10 +3,15 @@ import { getPredictionMarkets } from "@/lib/data/predictionMarkets";
 import PredictionMarketCard from "@/components/markets/PredictionMarketCard";
 import DataStatusBadge from "@/components/ui/DataStatusBadge";
 import EmptyState from "@/components/ui/EmptyState";
+import { getRunnerAccess } from "@/lib/auth/access";
+import Paywall from "@/components/auth/Paywall";
 
 export const dynamic = "force-dynamic";
 
 export default async function PredictionMarketsPage({ searchParams }: { searchParams: Promise<{ provider?: "kalshi" | "polymarket" }> }) {
+  const access = await getRunnerAccess();
+  if (!access.fullAccess) return <Paywall feature="Prediction-market intelligence" />;
+
   const { provider } = await searchParams;
   const markets = await getPredictionMarkets({ provider, status: "open", limit: 250 });
   const kalshi = markets.filter((market) => market.provider === "kalshi").length;

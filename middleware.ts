@@ -1,7 +1,27 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse, type NextFetchEvent, type NextRequest } from "next/server";
 
-const isProtectedRoute = createRouteMatcher(["/account(.*)", "/billing(.*)"]);
+const isProtectedRoute = createRouteMatcher([
+  "/account(.*)",
+  "/billing(.*)",
+  "/dashboard(.*)",
+  "/picks(.*)",
+  "/edge(.*)",
+  "/research(.*)",
+  "/systems(.*)",
+  "/models(.*)",
+  "/tracker(.*)",
+  "/props(.*)",
+  "/markets(.*)",
+  "/prediction-markets(.*)",
+  "/analytics(.*)",
+  "/games(.*)",
+  "/odds(.*)",
+  "/teams(.*)",
+  "/players(.*)",
+  "/sportsbooks(.*)",
+  "/admin(.*)",
+]);
 const clerkConfigured = Boolean(
   process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY,
 );

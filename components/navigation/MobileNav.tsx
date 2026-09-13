@@ -5,13 +5,14 @@ import { usePathname } from "next/navigation";
 import { navItems } from "@/components/navigation/nav-items";
 import NavIcon from "@/components/navigation/NavIcon";
 
-export default function MobileNav() {
+export default function MobileNav({ isAdmin = false }: { isAdmin?: boolean }) {
   const pathname = usePathname();
+  const items = isAdmin ? [...navItems, { label: "Admin", href: "/admin", icon: "cpu" }] : navItems;
 
   return (
     <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border bg-surface/95 backdrop-blur supports-[backdrop-filter]:bg-surface/80">
       <ul className="flex justify-between px-1 py-1.5 overflow-x-auto">
-        {navItems.map((item) => {
+        {items.map((item) => {
           const active = pathname === item.href || pathname?.startsWith(`${item.href}/`);
           return (
             <li key={item.href} className="flex-1 min-w-[56px]">

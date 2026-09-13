@@ -1,10 +1,15 @@
 import Link from "next/link";
 import ProductHeading from "@/components/ui/ProductHeading";
 import { getEspnRecords } from "@/lib/data/espn";
+import { getRunnerAccess } from "@/lib/auth/access";
+import Paywall from "@/components/auth/Paywall";
 
 export const dynamic = "force-dynamic";
 
 export default async function SportResearchPage({ params }: { params: Promise<{ sport: string }> }) {
+  const access = await getRunnerAccess();
+  if (!access.fullAccess) return <Paywall feature="Research" />;
+
   const { sport } = await params;
   const records = await getEspnRecords({ sport }).catch(() => []);
   const label = sport.toUpperCase();

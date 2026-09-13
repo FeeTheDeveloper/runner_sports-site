@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import AppShell from "@/components/navigation/AppShell";
 import RunnerAuthProvider from "@/components/auth/RunnerAuthProvider";
+import { getRunnerAccess } from "@/lib/auth/access";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://werunsportsandanalytics.com"),
@@ -15,16 +16,18 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#04081A" };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const access = await getRunnerAccess();
+
   return (
     <html lang="en">
       <body>
         <RunnerAuthProvider>
-          <AppShell>{children}</AppShell>
+          <AppShell isAdmin={access.isAdmin}>{children}</AppShell>
         </RunnerAuthProvider>
       </body>
     </html>
