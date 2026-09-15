@@ -30,15 +30,15 @@ export default function Header() {
           })}
         </nav>
         <div className="flex items-center gap-2">
-          <button aria-label="Search Runner" className="hidden min-h-10 rounded-lg border border-border bg-surface px-3 text-xs text-text-muted transition hover:border-border-strong hover:text-text sm:block">Search teams, players, markets <kbd className="ml-4 font-mono text-[10px] text-text-subtle">/</kbd></button>
+          <button type="button" disabled aria-disabled="true" aria-label="Search Runner" title="Coming soon" className="hidden min-h-10 cursor-not-allowed rounded-lg border border-border bg-surface px-3 text-xs text-text-muted opacity-60 transition sm:block">Search teams, players, markets <kbd className="ml-4 font-mono text-[10px] text-text-subtle">/</kbd></button>
           <DataStatusBadge />
-          <button aria-label="Open alerts" className="grid h-10 w-10 place-items-center rounded-lg border border-border bg-surface text-sm text-text-muted">◎</button>
+          <button type="button" disabled aria-disabled="true" aria-label="Open alerts" title="Coming soon" className="grid h-10 w-10 cursor-not-allowed place-items-center rounded-lg border border-border bg-surface text-sm text-text-muted opacity-60">◎</button>
           <AuthControls />
         </div>
       </div>
       <nav className="flex gap-1 overflow-x-auto border-t border-border px-4 py-2 md:px-6 xl:px-8" aria-label="Sport navigation">
         {sports.map((sport, index) => <Link key={sport} href={index === 0 ? "/picks" : `/odds?sport=${sport.toLowerCase()}`} className={`whitespace-nowrap rounded-full px-3 py-1.5 text-[11px] font-bold uppercase tracking-wide transition ${index === 0 && pathname === "/picks" ? "bg-accent text-white" : "text-text-muted hover:bg-surface-2 hover:text-text"}`}>{sport}</Link>)}
-        <span className="px-2 py-1.5 text-[11px] text-text-subtle">More +</span>
+        <span title="Coming soon" aria-disabled="true" className="cursor-not-allowed px-2 py-1.5 text-[11px] text-text-subtle opacity-60">More +</span>
       </nav>
     </header>
   );

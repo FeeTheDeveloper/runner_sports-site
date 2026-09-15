@@ -5,10 +5,11 @@ import Paywall from "@/components/auth/Paywall";
 
 export const dynamic = "force-dynamic";
 
-export default async function PropsPage() {
+export default async function PropsPage({ searchParams }: { searchParams: Promise<{ gameId?: string }> }) {
   const access = await getRunnerAccess();
   if (!access.fullAccess) return <Paywall feature="Player prop intelligence" />;
 
+  const { gameId } = await searchParams;
   const props = await getProps();
 
   return (
@@ -19,7 +20,7 @@ export default async function PropsPage() {
           Live player markets with sportsbook lines, no-vig consensus probability, and verified player identity.
         </p>
       </div>
-      <PropsExplorer props={props} />
+      <PropsExplorer props={props} initialGameId={gameId} />
     </div>
   );
 }

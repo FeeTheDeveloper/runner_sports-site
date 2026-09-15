@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { Game } from "@/types";
 import Badge from "@/components/ui/Badge";
 import ConfidenceBadge from "@/components/ui/ConfidenceBadge";
@@ -20,7 +21,10 @@ export default function GameCard({ game, showFactors = false }: GameCardProps) {
   const projectedTeam = [game.homeTeam, game.awayTeam].find((t) => t.id === game.runnerProjectedWinner);
 
   return (
-    <div className="rounded-lg border border-border bg-surface p-4 flex flex-col gap-4">
+    <Link
+      href={`/games/${game.id}`}
+      className="rounded-lg border border-border bg-surface p-4 flex flex-col gap-4 transition hover:border-accent/40 hover:bg-surface-2"
+    >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Badge variant="accent" label={game.league} />
@@ -59,7 +63,7 @@ export default function GameCard({ game, showFactors = false }: GameCardProps) {
         <span>Market source: {game.source.source}</span>
         <span>{new Date(game.source.retrievedAt).toLocaleString("en-US", { timeZone: "America/Chicago" })} CT</span>
       </div>
-    </div>
+    </Link>
   );
 }
 
