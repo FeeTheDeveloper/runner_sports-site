@@ -38,6 +38,7 @@ export default function PricingPage() {
         <p className="text-[10px] font-black uppercase tracking-[.28em] text-accent">Runner Access</p>
         <h1 className="mt-4 text-5xl font-black uppercase tracking-[-.05em] text-white sm:text-7xl">Own the information.</h1>
         <p className="mx-auto mt-5 max-w-2xl text-base leading-7 text-text-muted">This is access to the Runner intelligence platform—not a picks club. Final paid prices are controlled in Stripe so the site can launch without hard-coded billing assumptions.</p>
+        <p className="mx-auto mt-3 max-w-2xl text-xs font-black uppercase tracking-wider text-analytics">Veterans save 15% — verification by Hutchrok Group Solutions, typically within 24 hours. Request it from your billing page after signing up.</p>
         <div className="mt-12 grid gap-4 text-left lg:grid-cols-3">
           {plans.map((plan, index) => {
             const isPaid = plan.id !== "free";

@@ -1,6 +1,7 @@
 import { currentUser } from "@clerk/nextjs/server";
 import Link from "next/link";
 import PortalButton from "@/components/billing/PortalButton";
+import VeteranDiscountPanel from "@/components/billing/VeteranDiscountPanel";
 import ProductHeading from "@/components/ui/ProductHeading";
 import { isClerkConfigured } from "@/lib/auth/config";
 import { isStripeConfigured } from "@/lib/stripe/server";
@@ -20,6 +21,7 @@ export default async function BillingPage() {
         <div className="mt-7 flex flex-wrap gap-3">{user && isStripeConfigured() && hasCustomer ? <PortalButton /> : null}<Link href="/pricing" className="rounded-lg border border-border px-4 py-3 text-xs font-black uppercase text-text">View access levels</Link></div>
         {!isStripeConfigured() ? <p className="mt-5 text-xs text-text-muted">Stripe is not active in this environment yet. The billing paths are ready for the deployment keys.</p> : null}
       </section>
+      {user ? <VeteranDiscountPanel /> : null}
     </div>
   );
 }
