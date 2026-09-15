@@ -4,6 +4,8 @@ import PerformanceChart from "@/components/charts/PerformanceChart";
 import Badge from "@/components/ui/Badge";
 import { formatCurrency, formatDate, formatOdds, formatPercent, formatSignedPercent } from "@/lib/utils/format";
 import type { TrackedBet } from "@/types";
+import { getRunnerAccess } from "@/lib/auth/access";
+import Paywall from "@/components/auth/Paywall";
 
 export const dynamic = "force-dynamic";
 
@@ -75,6 +77,9 @@ function strongestMarketInsight(bets: TrackedBet[]) {
 }
 
 export default async function AnalyticsPage() {
+  const access = await getRunnerAccess();
+  if (!access.fullAccess) return <Paywall feature="Trend Lab analytics" />;
+
   const [summary, bets] = await Promise.all([getTrackerSummary(), getTrackedBets()]);
   const breakdowns = sportBreakdown(bets);
   const { values, labels } = cumulativeProfitSeries(bets);

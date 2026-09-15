@@ -7,17 +7,19 @@ import EmptyState from "@/components/ui/EmptyState";
 
 const ALL = "all";
 
-export default function PropsExplorer({ props }: { props: PlayerProp[] }) {
+export default function PropsExplorer({ props, initialGameId }: { props: PlayerProp[]; initialGameId?: string }) {
   const [sport, setSport] = useState(ALL);
   const [market, setMarket] = useState(ALL);
   const [confidence, setConfidence] = useState<typeof ALL | Confidence>(ALL);
   const [team, setTeam] = useState(ALL);
+  const [gameId, setGameId] = useState(initialGameId);
 
   const sports = useMemo(() => Array.from(new Set(props.map((p) => p.sport))), [props]);
   const markets = useMemo(() => Array.from(new Set(props.map((p) => p.market))), [props]);
   const teams = useMemo(() => Array.from(new Set(props.map((p) => p.player.team).filter(Boolean))), [props]);
 
   const filtered = props.filter((p) => {
+    if (gameId && p.gameId !== gameId) return false;
     if (sport !== ALL && p.sport !== sport) return false;
     if (market !== ALL && p.market !== market) return false;
     if (confidence !== ALL && p.confidence !== confidence) return false;
@@ -27,6 +29,14 @@ export default function PropsExplorer({ props }: { props: PlayerProp[] }) {
 
   return (
     <div className="space-y-6">
+      {gameId && (
+        <div className="flex items-center gap-3 rounded-lg border border-accent/30 bg-accent/10 px-4 py-2 text-xs font-semibold text-accent">
+          Showing props for this matchup only
+          <button type="button" onClick={() => setGameId(undefined)} className="rounded-full border border-accent/40 px-2 py-0.5 text-[10px] font-bold text-accent hover:bg-accent/10">
+            Clear
+          </button>
+        </div>
+      )}
       <div className="flex flex-wrap gap-3">
         <FilterSelect label="Sport" value={sport} onChange={setSport} options={sports} />
         <FilterSelect label="Market" value={market} onChange={setMarket} options={markets} />

@@ -3,28 +3,31 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import AppShell from "@/components/navigation/AppShell";
 import RunnerAuthProvider from "@/components/auth/RunnerAuthProvider";
+import { getRunnerAccess } from "@/lib/auth/access";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://werunsportsandanalytics.com"),
-  title: { default: "We Run Sports and Analytics | Runner Sports & Analytics", template: "%s | Runner Sports & Analytics" },
+  title: { default: "We Run Sports & Analytics | Runner Sports & Analytics", template: "%s | Runner Sports & Analytics" },
   description: "Runner Sports and Analytics. Live odds, matchup intelligence, player research, predictive models, and market analysis by Runner Sports & Analytics.",
   icons: { icon: "/brand/icon.png" },
-  openGraph: { title: "We Run Sports and Analytics", description: "The sports intelligence command center by Runner Sports & Analytics.", type: "website" },
-  twitter: { card: "summary_large_image", title: "We Run Sports and Analytics", description: "The sports intelligence command center by Runner Sports & Analytics." },
+  openGraph: { title: "We Run Sports & Analytics", description: "The sports intelligence command center by Runner Sports & Analytics.", type: "website" },
+  twitter: { card: "summary_large_image", title: "We Run Sports & Analytics", description: "The sports intelligence command center by Runner Sports & Analytics." },
 };
 
 export const viewport: Viewport = { width: "device-width", initialScale: 1, themeColor: "#04081A" };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const access = await getRunnerAccess();
+
   return (
     <html lang="en">
       <body>
         <RunnerAuthProvider>
-          <AppShell>{children}</AppShell>
+          <AppShell isAdmin={access.isAdmin}>{children}</AppShell>
         </RunnerAuthProvider>
       </body>
     </html>

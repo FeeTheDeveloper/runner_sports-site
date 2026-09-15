@@ -6,7 +6,7 @@ import { navItems } from "@/components/navigation/nav-items";
 import NavIcon from "@/components/navigation/NavIcon";
 import RunnerLogo from "@/components/brand/RunnerLogo";
 
-export default function Sidebar() {
+export default function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
   const pathname = usePathname();
 
   return (
@@ -34,6 +34,19 @@ export default function Sidebar() {
             </Link>
           );
         })}
+        {isAdmin && (
+          <Link
+            href="/admin"
+            className={`mt-4 flex min-h-11 items-center gap-3 rounded-lg border px-3 py-2 text-sm font-medium transition-all ${
+              pathname === "/admin" || pathname?.startsWith("/admin/")
+                ? "border-accent/25 bg-accent/10 text-text shadow-[inset_3px_0_0_var(--color-accent)]"
+                : "border-border-strong text-text-muted hover:bg-surface-2 hover:text-text"
+            }`}
+          >
+            <NavIcon name="cpu" className={`h-4 w-4 ${pathname?.startsWith("/admin") ? "text-accent" : ""}`} />
+            Admin
+          </Link>
+        )}
       </nav>
 
       <div className="px-4 py-4 border-t border-border">

@@ -1,5 +1,7 @@
 import Link from "next/link";
 import ProductHeading from "@/components/ui/ProductHeading";
+import { getRunnerAccess } from "@/lib/auth/access";
+import Paywall from "@/components/auth/Paywall";
 
 // Only sports the ESPN sync job actually covers (lib/data/sports.ts) can back
 // a research page with real data. UFC and Golf are individual-athlete sports
@@ -17,10 +19,13 @@ const labs = [
   ["Historical Matchups", "Comparable games, head-to-head context, and situation-specific outcomes.", "/games"],
 ];
 
-export default function ResearchPage() {
+export default async function ResearchPage() {
+  const access = await getRunnerAccess();
+  if (!access.fullAccess) return <Paywall feature="Research" />;
+
   return <div className="space-y-8"><ProductHeading eyebrow="Research Center" title="Know More Than The Number" description="Move from sport to team, player, trend, injury, and matchup intelligence without breaking the research flow." />
     <section className="data-panel overflow-hidden"><div className="border-b border-border p-5"><p className="text-xs font-bold uppercase tracking-widest text-text-subtle">Choose a sport</p><div className="mt-4 flex flex-wrap gap-2">{sports.map((sport,index)=><Link key={sport} href={`/research/${sport.toLowerCase()}`} className={`rounded-lg border px-4 py-2 text-xs font-black ${index===0 ? "border-accent bg-accent text-white" : "border-border bg-canvas text-text-muted hover:text-text"}`}>{sport}</Link>)}{comingSoonSports.map(sport=><span key={sport} title="Coming soon" className="cursor-not-allowed rounded-lg border border-dashed border-border px-4 py-2 text-xs font-black text-text-subtle opacity-60">{sport} · Soon</span>)}</div></div>
       <div className="grid md:grid-cols-2 xl:grid-cols-3">{labs.map(([title,description,href],index)=><Link href={href} key={title} className="group border-b border-r border-border p-6 hover:bg-surface-2"><span className="text-[10px] font-mono text-accent">0{index+1}</span><h2 className="mt-5 text-lg font-bold text-text">{title}</h2><p className="mt-2 text-sm leading-6 text-text-muted">{description}</p><span className="mt-5 inline-block text-xs font-bold text-accent group-hover:translate-x-1">Open lab →</span></Link>)}</div></section>
-    <section className="grid gap-3 lg:grid-cols-[1.2fr_.8fr]"><div className="runner-card p-6"><p className="text-[10px] font-bold uppercase tracking-widest text-accent">Runner AI Research</p><h2 className="mt-2 text-xl font-bold text-text">Ask the board a sports question.</h2><div className="mt-5 flex gap-2 rounded-xl border border-border bg-canvas p-2"><input aria-label="Research question" className="min-w-0 flex-1 bg-transparent px-3 text-sm text-text outline-none" placeholder="Which NBA teams outperform after two road losses?"/><button className="rounded-lg bg-accent px-4 py-2 text-xs font-bold text-white">Research</button></div></div><div className="runner-card p-6"><p className="text-[10px] font-bold uppercase tracking-widest text-analytics">Data Lineage</p><p className="mt-3 text-sm leading-6 text-text-muted">Every output is labeled as fact, calculation, model output, inference, or unknown—with source and timestamp attached.</p></div></section>
+    <section className="grid gap-3 lg:grid-cols-[1.2fr_.8fr]"><div className="runner-card p-6"><p className="text-[10px] font-bold uppercase tracking-widest text-accent">Runner AI Research <span className="ml-2 rounded-full border border-dashed border-border px-2 py-0.5 text-[9px] font-black normal-case tracking-normal text-text-subtle">Coming soon</span></p><h2 className="mt-2 text-xl font-bold text-text">Ask the board a sports question.</h2><div className="mt-5 flex gap-2 rounded-xl border border-border bg-canvas p-2" title="Coming soon"><input aria-label="Research question" disabled className="min-w-0 flex-1 cursor-not-allowed bg-transparent px-3 text-sm text-text-subtle outline-none" placeholder="Which NBA teams outperform after two road losses?"/><button type="button" disabled aria-disabled="true" className="cursor-not-allowed rounded-lg bg-accent px-4 py-2 text-xs font-bold text-white opacity-60">Research</button></div></div><div className="runner-card p-6"><p className="text-[10px] font-bold uppercase tracking-widest text-analytics">Data Lineage</p><p className="mt-3 text-sm leading-6 text-text-muted">Every output is labeled as fact, calculation, model output, inference, or unknown—with source and timestamp attached.</p></div></section>
   </div>;
 }

@@ -5,12 +5,17 @@ import { getEdges } from "@/lib/data/edges";
 import { getProps } from "@/lib/data/props";
 import { formatOdds, formatPercent, formatSignedPercent } from "@/lib/utils/format";
 import PlayerHeadshot from "@/components/sports/PlayerHeadshot";
+import { getRunnerAccess } from "@/lib/auth/access";
+import Paywall from "@/components/auth/Paywall";
 
 export const dynamic = "force-dynamic";
 
 const SPORTS = ["MLB", "NFL", "NCAAF", "NBA", "WNBA", "NHL"];
 
 export default async function PicksPage({ searchParams }: { searchParams: Promise<{ sport?: string; market?: string }> }) {
+  const access = await getRunnerAccess();
+  if (!access.fullAccess) return <Paywall feature="Best plays" />;
+
   const params = await searchParams;
   const [allEdges, props] = await Promise.all([getEdges({ sport: params.sport, limit: 50 }).catch(() => []), getProps().catch(() => [])]);
   const edges = params.market ? allEdges.filter((edge) => edge.market.toLowerCase() === params.market) : allEdges;

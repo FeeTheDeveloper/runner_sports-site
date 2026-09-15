@@ -8,7 +8,7 @@ import AgentNavigator from "@/components/navigation/AgentNavigator";
 import ResponsibleGamblingNotice from "@/components/legal/ResponsibleGamblingNotice";
 import RunnerTicker from "@/components/marketing/RunnerTicker";
 
-export default function AppShell({ children }: { children: React.ReactNode }) {
+export default function AppShell({ children, isAdmin = false }: { children: React.ReactNode; isAdmin?: boolean }) {
   const pathname = usePathname();
   const publicPaths = ["/", "/sign-in", "/sign-up", "/pricing", "/checkout/success", "/checkout/cancel"];
 
@@ -18,7 +18,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-dvh bg-canvas">
-      <Sidebar />
+      <Sidebar isAdmin={isAdmin} />
       <div className="flex flex-1 flex-col min-w-0">
         <Header />
         <RunnerTicker />
@@ -31,7 +31,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </main>
       </div>
-      <MobileNav />
+      <MobileNav isAdmin={isAdmin} />
       <AgentNavigator />
     </div>
   );

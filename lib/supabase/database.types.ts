@@ -436,6 +436,8 @@ export type Database = {
       runner_research_evidence: RunnerTable;
       runner_control_commands: RunnerTable;
       runner_control_results: RunnerTable;
+      manual_access_grants: RunnerTable;
+      veteran_discount_requests: RunnerTable;
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

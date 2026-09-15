@@ -1,10 +1,15 @@
 import { getMarketMovements } from "@/lib/data/markets";
 import MarketMovementCard from "@/components/markets/MarketMovementCard";
 import DataStatusBadge from "@/components/ui/DataStatusBadge";
+import { getRunnerAccess } from "@/lib/auth/access";
+import Paywall from "@/components/auth/Paywall";
 
 export const dynamic = "force-dynamic";
 
 export default async function MarketsPage() {
+  const access = await getRunnerAccess();
+  if (!access.fullAccess) return <Paywall feature="Market intelligence" />;
+
   const movements = await getMarketMovements();
   return (
     <div className="space-y-7">
