@@ -428,3 +428,123 @@ export interface TrackerSummary {
   averageOdds: number;
   averageClv: number;
 }
+
+// RUNNER SCOREBOARD VIEW MODEL
+// The scoreboard components under components/scoreboard/ render this shape
+// only — they never fetch or fabricate data. A route assembles the
+// ScoreboardViewModel from approved normalized state (ESPN scoreboard rows,
+// runner_game_flow) and passes it down, so the same view model can also
+// drive report/PDF/social exports later.
+
+export interface ScoreboardTeam {
+  id: string;
+  abbreviation: string;
+  name: string;
+  city?: string;
+  record?: string;
+  score: number;
+  logoUrl?: string;
+}
+
+export interface ScoreboardTrend {
+  direction: TrendDirection;
+  text: string;
+}
+
+export interface ScoreboardMarketRow {
+  label: string;
+  away: string;
+  home: string;
+}
+
+export interface ScoreboardStatRow {
+  label: string;
+  away: string | number;
+  home: string | number;
+}
+
+export interface ScoreboardSpotlight {
+  title: string;
+  name: string;
+  detail?: string;
+  line?: string;
+}
+
+export interface ScoreboardNextUp {
+  matchup: string;
+  time: string;
+  venue: string;
+}
+
+export interface ScoreboardIntelligence {
+  sourceLabel: string;
+  updatedAt: string;
+  freshness: Freshness;
+}
+
+export interface ScoreboardMeta {
+  league: string;
+  venue?: string;
+  location?: string;
+  date: string;
+  status: GameStatus | string;
+  awayTeam: ScoreboardTeam;
+  homeTeam: ScoreboardTeam;
+  trends?: ScoreboardTrend[];
+  markets?: ScoreboardMarketRow[];
+  stats?: ScoreboardStatRow[];
+  nextUp?: ScoreboardNextUp;
+  intelligence: ScoreboardIntelligence;
+}
+
+export interface MlbInningRow {
+  team: string;
+  innings: Array<number | string>;
+  runs: number;
+  hits: number;
+  errors: number;
+}
+
+export interface MlbSituation {
+  inningLabel: string;
+  count: string;
+  outs: number;
+  bases: { first?: boolean; second?: boolean; third?: boolean };
+}
+
+export interface MlbScoreboardViewModel extends ScoreboardMeta {
+  inningRows: MlbInningRow[];
+  situation: MlbSituation;
+  batter?: ScoreboardSpotlight;
+  pitcher?: ScoreboardSpotlight;
+}
+
+export interface FootballSituation {
+  clock?: string;
+  quarterLabel: string;
+  down?: string;
+  distance?: string;
+  yardLine?: string;
+  possession?: "away" | "home";
+}
+
+export interface FootballScoreboardViewModel extends ScoreboardMeta {
+  situation: FootballSituation;
+  offense?: ScoreboardSpotlight;
+  defense?: ScoreboardSpotlight;
+}
+
+export interface BasketballSituation {
+  clock?: string;
+  periodLabel: string;
+  awayFouls?: number;
+  homeFouls?: number;
+  awayTimeouts?: number;
+  homeTimeouts?: number;
+}
+
+export interface NbaScoreboardViewModel extends ScoreboardMeta {
+  situation: BasketballSituation;
+  awayLeader?: ScoreboardSpotlight;
+  homeLeader?: ScoreboardSpotlight;
+}
