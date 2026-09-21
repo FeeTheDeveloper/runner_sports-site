@@ -438,6 +438,12 @@ export type Database = {
       runner_control_results: RunnerTable;
       manual_access_grants: RunnerTable;
       veteran_discount_requests: RunnerTable;
+      runner_import_runs: RunnerTable;
+      runner_bets: RunnerTable;
+      runner_bet_legs: RunnerTable;
+      runner_bet_performance: RunnerTable;
+      runner_portfolio_summary: RunnerTable;
+      runner_market_type_performance: RunnerTable;
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

@@ -548,3 +548,56 @@ export interface NbaScoreboardViewModel extends ScoreboardMeta {
   awayLeader?: ScoreboardSpotlight;
   homeLeader?: ScoreboardSpotlight;
 }
+
+// RUNNER PERFORMANCE LEDGER
+// Verified historical betting performance imported from the Juice Reel CSV
+// export (lib/juice-reel/*). juice_bet_id is ticket identity; a ticket's
+// risk/P/L is real money actually risked and settled — never a model
+// projection — and must be counted once per ticket, not once per leg.
+
+export type RunnerBetResult = "Won" | "Lost" | "CashedOut" | "Pending" | string;
+
+export interface RunnerBetRecord {
+  id: string;
+  juiceBetId: number;
+  sportsbook: string;
+  betResult: RunnerBetResult | null;
+  riskAmount: number | null;
+  amountWonOrLost: number | null;
+  maxPotentialWin: number | null;
+  oddsAmerican: number | null;
+  numberOfLegs: number;
+  datePlaced: string | null;
+  dateSettled: string | null;
+  roiPercent: number | null;
+}
+
+export interface PerformanceBucket {
+  label: string;
+  bets: number;
+  wins: number;
+  losses: number;
+  cashouts: number;
+  risked: number;
+  profit: number;
+  roiPercent: number;
+}
+
+export interface RunnerPerformanceSummary {
+  generatedAt: string;
+  totalBets: number;
+  wins: number;
+  losses: number;
+  cashouts: number;
+  totalRisked: number;
+  netProfit: number;
+  roiPercent: number;
+  averageRisk: number;
+  averageLegCount: number;
+  bySportsbook: PerformanceBucket[];
+  bySport: PerformanceBucket[];
+  byLeague: PerformanceBucket[];
+  byMarketType: PerformanceBucket[];
+  byLegCount: PerformanceBucket[];
+  byDuration: PerformanceBucket[];
+}

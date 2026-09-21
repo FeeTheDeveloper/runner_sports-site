@@ -7,7 +7,9 @@ import NavIcon from "@/components/navigation/NavIcon";
 
 export default function MobileNav({ isAdmin = false }: { isAdmin?: boolean }) {
   const pathname = usePathname();
-  const items = isAdmin ? [...navItems, { label: "Admin", href: "/admin", icon: "cpu" }] : navItems;
+  const items = isAdmin
+    ? [...navItems, { label: "Admin", href: "/admin", icon: "cpu" }, { label: "Performance", href: "/performance", icon: "chart" }]
+    : navItems;
 
   return (
     <nav className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t border-border bg-surface/95 backdrop-blur supports-[backdrop-filter]:bg-surface/80">
