@@ -428,3 +428,176 @@ export interface TrackerSummary {
   averageOdds: number;
   averageClv: number;
 }
+
+// RUNNER SCOREBOARD VIEW MODEL
+// The scoreboard components under components/scoreboard/ render this shape
+// only — they never fetch or fabricate data. A route assembles the
+// ScoreboardViewModel from approved normalized state (ESPN scoreboard rows,
+// runner_game_flow) and passes it down, so the same view model can also
+// drive report/PDF/social exports later.
+
+export interface ScoreboardTeam {
+  id: string;
+  abbreviation: string;
+  name: string;
+  city?: string;
+  record?: string;
+  score: number;
+  logoUrl?: string;
+}
+
+export interface ScoreboardTrend {
+  direction: TrendDirection;
+  text: string;
+}
+
+export interface ScoreboardMarketRow {
+  label: string;
+  away: string;
+  home: string;
+}
+
+export interface ScoreboardStatRow {
+  label: string;
+  away: string | number;
+  home: string | number;
+}
+
+export interface ScoreboardSpotlight {
+  title: string;
+  name: string;
+  detail?: string;
+  line?: string;
+}
+
+export interface ScoreboardNextUp {
+  matchup: string;
+  time: string;
+  venue: string;
+}
+
+export interface ScoreboardIntelligence {
+  sourceLabel: string;
+  updatedAt: string;
+  freshness: Freshness;
+}
+
+export interface ScoreboardMeta {
+  league: string;
+  venue?: string;
+  location?: string;
+  date: string;
+  status: GameStatus | string;
+  awayTeam: ScoreboardTeam;
+  homeTeam: ScoreboardTeam;
+  trends?: ScoreboardTrend[];
+  markets?: ScoreboardMarketRow[];
+  stats?: ScoreboardStatRow[];
+  nextUp?: ScoreboardNextUp;
+  intelligence: ScoreboardIntelligence;
+}
+
+export interface MlbInningRow {
+  team: string;
+  innings: Array<number | string>;
+  runs: number;
+  hits: number;
+  errors: number;
+}
+
+export interface MlbSituation {
+  inningLabel: string;
+  count: string;
+  outs: number;
+  bases: { first?: boolean; second?: boolean; third?: boolean };
+}
+
+export interface MlbScoreboardViewModel extends ScoreboardMeta {
+  inningRows: MlbInningRow[];
+  situation: MlbSituation;
+  batter?: ScoreboardSpotlight;
+  pitcher?: ScoreboardSpotlight;
+}
+
+export interface FootballSituation {
+  clock?: string;
+  quarterLabel: string;
+  down?: string;
+  distance?: string;
+  yardLine?: string;
+  possession?: "away" | "home";
+}
+
+export interface FootballScoreboardViewModel extends ScoreboardMeta {
+  situation: FootballSituation;
+  offense?: ScoreboardSpotlight;
+  defense?: ScoreboardSpotlight;
+}
+
+export interface BasketballSituation {
+  clock?: string;
+  periodLabel: string;
+  awayFouls?: number;
+  homeFouls?: number;
+  awayTimeouts?: number;
+  homeTimeouts?: number;
+}
+
+export interface NbaScoreboardViewModel extends ScoreboardMeta {
+  situation: BasketballSituation;
+  awayLeader?: ScoreboardSpotlight;
+  homeLeader?: ScoreboardSpotlight;
+}
+
+// RUNNER PERFORMANCE LEDGER
+// Verified historical betting performance imported from the Juice Reel CSV
+// export (lib/juice-reel/*). juice_bet_id is ticket identity; a ticket's
+// risk/P/L is real money actually risked and settled — never a model
+// projection — and must be counted once per ticket, not once per leg.
+
+export type RunnerBetResult = "Won" | "Lost" | "CashedOut" | "Pending" | string;
+
+export interface RunnerBetRecord {
+  id: string;
+  juiceBetId: number;
+  sportsbook: string;
+  betResult: RunnerBetResult | null;
+  riskAmount: number | null;
+  amountWonOrLost: number | null;
+  maxPotentialWin: number | null;
+  oddsAmerican: number | null;
+  numberOfLegs: number;
+  datePlaced: string | null;
+  dateSettled: string | null;
+  roiPercent: number | null;
+}
+
+export interface PerformanceBucket {
+  label: string;
+  bets: number;
+  wins: number;
+  losses: number;
+  cashouts: number;
+  risked: number;
+  profit: number;
+  roiPercent: number;
+}
+
+export interface RunnerPerformanceSummary {
+  generatedAt: string;
+  totalBets: number;
+  wins: number;
+  losses: number;
+  cashouts: number;
+  totalRisked: number;
+  netProfit: number;
+  roiPercent: number;
+  averageRisk: number;
+  averageLegCount: number;
+  bySportsbook: PerformanceBucket[];
+  bySport: PerformanceBucket[];
+  byLeague: PerformanceBucket[];
+  byMarketType: PerformanceBucket[];
+  byLegCount: PerformanceBucket[];
+  byDuration: PerformanceBucket[];
+}

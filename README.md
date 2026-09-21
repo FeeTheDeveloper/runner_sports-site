@@ -42,6 +42,7 @@ public/           # Static assets
 | `/sign-up` and `/sign-in` | Clerk-hosted account entry paths |
 | `/account` and `/billing` | Protected identity and Stripe billing paths |
 | `/pricing` | Public Runner access levels and Stripe Checkout entry |
+| `/performance` | Admin-only Runner Performance Ledger — Juice Reel CSV import and verified betting performance breakdowns |
 
 ## Getting Started
 
@@ -84,6 +85,10 @@ All endpoints return JSON as `{ data, meta? }`; missing resources return a struc
 | `POST /api/tracker` | Body: `{ date, sport, event, selection, market, sportsbook, odds, stake, result?, closingOdds?, clv? }` |
 | `GET /api/tracker/:id` | None |
 | `GET /api/tracker/summary` | None |
+| `POST /api/performance/import` | Admin-only. Multipart form upload (`file`) of a Juice Reel CSV export; deduplicates and upserts into `runner_bets`/`runner_bet_legs` |
+| `GET /api/performance/summary` | Admin-only. Portfolio totals plus by-sportsbook/sport/league/market-type/leg-count/duration breakdowns |
+| `GET /api/performance/bets` | Admin-only. `sportsbook`, `result`, `limit`, `offset` |
+| `GET /api/performance/markets` | Admin-only. Exploratory league/sport/market-type exposure (see attribution caveat in the migration) |
 | `GET`/`POST /api/cron/sync-odds` | Requires `Authorization: Bearer $CRON_SECRET`. Pulls NFL, NCAAF, NBA, WNBA, MLB, and NHL odds from The Odds API and upserts `games`/`market_movements`/`signals` in Supabase. |
 | `GET`/`POST /api/cron/sync-prediction-markets` | Requires `Authorization: Bearer $CRON_SECRET`. Pulls read-only sports markets from Kalshi and Polymarket and stores current state plus snapshots. |
 | `GET`/`POST /api/cron/sync-espn` | Requires the cron bearer token. Pulls ESPN scoreboards, injuries, rosters, standings, and team facts into `espn_records`, and seeds the `team_registry` canonical identity. |

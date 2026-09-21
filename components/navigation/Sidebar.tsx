@@ -47,6 +47,19 @@ export default function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
             Admin
           </Link>
         )}
+        {isAdmin && (
+          <Link
+            href="/performance"
+            className={`flex min-h-11 items-center gap-3 rounded-lg border px-3 py-2 text-sm font-medium transition-all ${
+              pathname === "/performance" || pathname?.startsWith("/performance/")
+                ? "border-accent/25 bg-accent/10 text-text shadow-[inset_3px_0_0_var(--color-accent)]"
+                : "border-border-strong text-text-muted hover:bg-surface-2 hover:text-text"
+            }`}
+          >
+            <NavIcon name="chart" className={`h-4 w-4 ${pathname?.startsWith("/performance") ? "text-accent" : ""}`} />
+            Performance
+          </Link>
+        )}
       </nav>
 
       <div className="px-4 py-4 border-t border-border">
