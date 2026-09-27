@@ -376,6 +376,7 @@ export type Database = {
       };
       tracked_bets: {
         Row: {
+          owner_user_id: string | null;
           bet_date: string;
           closing_odds: number | null;
           clv: number | null;
@@ -392,6 +393,7 @@ export type Database = {
           stake: number;
         };
         Insert: {
+          owner_user_id: string;
           bet_date: string;
           closing_odds?: number | null;
           clv?: number | null;
@@ -408,6 +410,7 @@ export type Database = {
           stake: number;
         };
         Update: {
+          owner_user_id?: string;
           bet_date?: string;
           closing_odds?: number | null;
           clv?: number | null;
@@ -438,9 +441,26 @@ export type Database = {
       runner_control_results: RunnerTable;
       manual_access_grants: RunnerTable;
       veteran_discount_requests: RunnerTable;
+      runner_billing_customers: RunnerTable;
+      runner_billing_subscriptions: RunnerTable;
+      runner_billing_events: RunnerTable;
+      runner_checkout_attempts: RunnerTable;
     };
     Views: Record<string, never>;
-    Functions: Record<string, never>;
+    Functions: {
+      runner_checkout_begin: { Args: { p_owner: string; p_plan: string; p_price: string }; Returns: Json };
+      runner_checkout_rotate: { Args: { p_owner: string; p_lease: string; p_session: string; p_plan: string; p_price: string }; Returns: Json };
+      runner_checkout_finish: { Args: { p_owner: string; p_lease: string; p_session: string | null }; Returns: undefined };
+      runner_billing_observation_time: { Args: Record<string, never>; Returns: string };
+      runner_bind_billing_customer: {
+        Args: { p_owner: string; p_customer: string; p_account: string };
+        Returns: undefined;
+      };
+      runner_apply_subscription_event: {
+        Args: { p_event_id: string; p_event_type: string; p_event_created: number; p_customer: string; p_subscription: string; p_status: string; p_plan: string | null; p_period_end: string | null; p_observed_at: string; p_livemode: boolean; p_account: string };
+        Returns: string;
+      };
+    };
     Enums: Record<string, never>;
     CompositeTypes: Record<string, never>;
   };

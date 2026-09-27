@@ -1,59 +1,38 @@
-import { clerkClient } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import type Stripe from "stripe";
-import { getStripe } from "@/lib/stripe/server";
-
-async function updateSubscriptionMetadata(
-  clerkUserId: string,
-  values: { stripeCustomerId?: string; stripeSubscriptionId?: string; runnerPlan?: string; subscriptionStatus?: string },
-) {
-  const clerk = await clerkClient();
-  await clerk.users.updateUserMetadata(clerkUserId, { privateMetadata: values });
-}
-
-function asId(value: string | { id: string } | null) {
-  return typeof value === "string" ? value : value?.id;
-}
+import { getStripe, getVerifiedBillingStripe, isStripeBillingConfigured, matchesBillingMode } from "@/lib/stripe/server";
+import { billingObservationTime, reconcileSubscriptionEvent } from "@/lib/billing/subscriptions";
 
 export async function POST(request: Request) {
+  const secret = process.env.STRIPE_WEBHOOK_SECRET;
+  if (!secret || !isStripeBillingConfigured()) return NextResponse.json({ error: "Webhook connection is not configured." }, { status: 503 });
   const signature = request.headers.get("stripe-signature");
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
-  if (!signature || !webhookSecret) {
-    return NextResponse.json({ error: "Stripe webhook verification is not configured." }, { status: 400 });
-  }
-
+  if (!signature) return NextResponse.json({ error: "Invalid webhook signature." }, { status: 400 });
+  const stripe = getStripe();
   let event: Stripe.Event;
-  try {
-    event = getStripe().webhooks.constructEvent(await request.text(), signature, webhookSecret);
-  } catch {
-    return NextResponse.json({ error: "Invalid Stripe webhook signature." }, { status: 400 });
-  }
-
-  if (event.type === "checkout.session.completed") {
+  try { event = stripe.webhooks.constructEvent(await request.text(), signature, secret); }
+  catch { return NextResponse.json({ error: "Invalid webhook signature." }, { status: 400 }); }
+  if (event.account) return NextResponse.json({ received: true, ignored: "connected_account" });
+  if (!matchesBillingMode(event.livemode)) return NextResponse.json({ error: "Webhook mode does not match this environment." }, { status: 400 });
+  let subscriptionId: string | undefined;
+  if (event.type === "checkout.session.completed" || event.type === "checkout.session.async_payment_succeeded") {
     const session = event.data.object;
-    const clerkUserId = session.client_reference_id ?? session.metadata?.clerk_user_id;
-    if (clerkUserId) {
-      await updateSubscriptionMetadata(clerkUserId, {
-        stripeCustomerId: asId(session.customer),
-        stripeSubscriptionId: asId(session.subscription),
-        runnerPlan: session.metadata?.runner_plan,
-        subscriptionStatus: session.status ?? "complete",
-      });
-    }
+    if (session.mode === "subscription") subscriptionId = typeof session.subscription === "string" ? session.subscription : session.subscription?.id;
+  } else if (["customer.subscription.created", "customer.subscription.updated", "customer.subscription.deleted"].includes(event.type)) {
+    subscriptionId = (event.data.object as Stripe.Subscription).id;
   }
-
-  if (event.type === "customer.subscription.updated" || event.type === "customer.subscription.deleted") {
-    const subscription = event.data.object;
-    const clerkUserId = subscription.metadata.clerk_user_id;
-    if (clerkUserId) {
-      await updateSubscriptionMetadata(clerkUserId, {
-        stripeCustomerId: asId(subscription.customer),
-        stripeSubscriptionId: subscription.id,
-        runnerPlan: subscription.metadata.runner_plan,
-        subscriptionStatus: subscription.status,
-      });
-    }
+  if (!subscriptionId) return NextResponse.json({ received: true, ignored: true });
+  try {
+    await getVerifiedBillingStripe();
+    // Fetch current provider truth even for an old or checkout-completed event.
+    // Checkout completion itself is never a subscription entitlement.
+    const observedAt = await billingObservationTime();
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    if (subscription.livemode !== event.livemode) throw new Error("Stripe mode mismatch.");
+    const result = await reconcileSubscriptionEvent(event, subscription, observedAt);
+    return NextResponse.json({ received: true, result });
+  } catch {
+    // Non-2xx asks Stripe to retry; there is no partial Clerk entitlement write.
+    return NextResponse.json({ error: "Subscription synchronization is temporarily unavailable." }, { status: 503 });
   }
-
-  return NextResponse.json({ received: true });
 }

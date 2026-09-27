@@ -42,7 +42,7 @@ export default function PropsExplorer({ props, initialGameId }: { props: PlayerP
         <FilterSelect label="Market" value={market} onChange={setMarket} options={markets} />
         <FilterSelect label="Team" value={team} onChange={setTeam} options={teams} />
         <FilterSelect
-          label="Confidence"
+          label="Book depth grade"
           value={confidence}
           onChange={(v) => setConfidence(v as typeof ALL | Confidence)}
           options={["high", "moderate", "low"]}
@@ -60,7 +60,7 @@ export default function PropsExplorer({ props, initialGameId }: { props: PlayerP
           title={props.length === 0 ? "No player props available yet" : "No props match these filters"}
           description={
             props.length === 0
-              ? "The next odds sync will load available player markets for nearby games."
+              ? "No fresh comparable player quotes are available. Missing, invalid, or stale prices are suppressed."
               : "Try clearing one or more filters above."
           }
         />

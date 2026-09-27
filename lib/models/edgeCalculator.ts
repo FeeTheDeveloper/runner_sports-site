@@ -4,20 +4,16 @@
 // no-vig consensus implied by all books quoting the same market, and rank
 // how large that divergence is.
 //
-// This is a baseline heuristic, not a trained model. "Model probability" here
-// means "no-vig consensus across the books we have odds for" — not a
-// probability estimated from historical outcomes. It has not been backtested
-// or calibrated against settled results. Treat any edge/confidence value it
-// produces as a market-pricing signal, not a win prediction.
+// This is a market price calculation. It does not estimate outcomes from
+// independent sports data and has not been calibrated or backtested.
+// Model fields remain null until an independent model output is connected.
 //
 // Known weaknesses:
 // - Consensus quality depends entirely on how many books are quoted for a
 //   given market; a two-book consensus is noisy.
 // - No adjustment for shading/limits at soft books vs. sharp books — every
 //   quoted price is weighted equally.
-// - Player-prop consensus assumes the same line across books; if books offer
-//   different lines for the same prop, mixing their odds into one consensus
-//   is not directly comparable (see computeConsensusProbability caveat below).
+// - Callers must filter to fresh quotes at the exact same line.
 
 export interface BookPrice {
   sportsbook: string;

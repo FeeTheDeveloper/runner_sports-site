@@ -1,4 +1,5 @@
-import type { Confidence, RiskLevel, RunnerEdge } from "@/types";
+import type { RunnerEdge } from "@/types";
+import { comparablePropQuotes, isFreshQuote, oldestQuoteTime, validAmericanOdds } from "@/lib/models/marketQuotes";
 import { sports } from "@/lib/data/sports";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import {
@@ -10,12 +11,6 @@ import {
 } from "@/lib/models/edgeCalculator";
 import type { BookOddsSnapshot } from "@/lib/providers/oddsApi";
 import { resolveTeamSearchNames } from "@/lib/data/teamRegistry";
-
-const RISK_BY_CONFIDENCE: Record<Confidence, RiskLevel> = {
-  high: "low",
-  moderate: "moderate",
-  low: "high",
-};
 
 interface GameRow {
   id: string;
@@ -34,7 +29,7 @@ interface PropRow {
   opponent: string;
   sport: string;
   market: string;
-  book_odds: { sportsbook: string; line: number; overOdds: number; underOdds: number }[];
+  book_odds: { sportsbook: string; line: number; overOdds: number; underOdds: number; capturedAt: string }[];
   updated_at: string;
 }
 
@@ -46,8 +41,11 @@ export interface EdgeQuery {
 }
 
 function gameMoneylineEdges(row: GameRow): RunnerEdge[] {
-  const moneylineBooks = row.book_odds.filter((b) => b.moneyline);
-  if (moneylineBooks.length === 0) return [];
+  const moneylineBooks = [...new Map(row.book_odds
+    .filter((b) => b.moneyline && isFreshQuote(b.capturedAt) && validAmericanOdds(b.moneyline.home) && validAmericanOdds(b.moneyline.away))
+    .sort((a, b) => Date.parse(a.capturedAt) - Date.parse(b.capturedAt))
+    .map((b) => [b.sportsbook.trim().toLowerCase(), b])).values()];
+  if (moneylineBooks.length < 2) return [];
 
   const consensusHomeFair = computeConsensusProbability(
     moneylineBooks.map((b) => devigTwoWay(b.moneyline!.home, b.moneyline!.away).probabilityA),
@@ -73,12 +71,17 @@ function gameMoneylineEdges(row: GameRow): RunnerEdge[] {
       sportsbook: displayed.sportsbook,
       odds: displayed.moneyline!.home,
       impliedProbability: Math.round(americanToImpliedProbability(displayed.moneyline!.home) * 1000) / 1000,
-      modelProbability: Math.round(consensusHomeFair * 1000) / 1000,
+      modelProbability: null,
       edge: Math.round(homeEdge * 1000) / 1000,
       confidence,
-      riskLevel: RISK_BY_CONFIDENCE[confidence],
+      riskLevel: "unassessed",
+      probabilityBasis: "no_vig_market_consensus",
+      noVigConsensusProbability: Math.round(consensusHomeFair * 1000) / 1000,
+      independentModelProbability: null,
+      bookCount: moneylineBooks.length,
+      executablePriceVerified: false,
       source: "The Odds API (no-vig consensus)",
-      updatedAt: row.updated_at,
+      updatedAt: oldestQuoteTime(moneylineBooks),
     });
   }
   if (awayEdge > 0) {
@@ -93,25 +96,31 @@ function gameMoneylineEdges(row: GameRow): RunnerEdge[] {
       sportsbook: displayed.sportsbook,
       odds: displayed.moneyline!.away,
       impliedProbability: Math.round(americanToImpliedProbability(displayed.moneyline!.away) * 1000) / 1000,
-      modelProbability: Math.round((1 - consensusHomeFair) * 1000) / 1000,
+      modelProbability: null,
       edge: Math.round(awayEdge * 1000) / 1000,
       confidence,
-      riskLevel: RISK_BY_CONFIDENCE[confidence],
+      riskLevel: "unassessed",
+      probabilityBasis: "no_vig_market_consensus",
+      noVigConsensusProbability: Math.round((1 - consensusHomeFair) * 1000) / 1000,
+      independentModelProbability: null,
+      bookCount: moneylineBooks.length,
+      executablePriceVerified: false,
       source: "The Odds API (no-vig consensus)",
-      updatedAt: row.updated_at,
+      updatedAt: oldestQuoteTime(moneylineBooks),
     });
   }
   return entries;
 }
 
 function propEdge(row: PropRow): RunnerEdge | null {
-  if (row.book_odds.length === 0) return null;
+  const books = comparablePropQuotes(row.book_odds);
+  if (books.length < 2) return null;
 
   const consensusOverFair = computeConsensusProbability(
-    row.book_odds.map((b) => devigTwoWay(b.overOdds, b.underOdds).probabilityA),
+    books.map((b) => devigTwoWay(b.overOdds, b.underOdds).probabilityA),
   );
-  const confidence = classifyConfidence(row.book_odds.length);
-  const displayed = row.book_odds[0];
+  const confidence = classifyConfidence(books.length);
+  const displayed = books[0];
   const impliedOver = americanToImpliedProbability(displayed.overOdds);
   const edge = computeEdge(consensusOverFair, impliedOver);
   if (edge <= 0) return null;
@@ -125,14 +134,20 @@ function propEdge(row: PropRow): RunnerEdge | null {
     market: row.market,
     selection: `${row.player.name} Over ${displayed.line} ${row.market}`,
     sportsbook: displayed.sportsbook,
+    line: displayed.line,
     odds: displayed.overOdds,
     impliedProbability: Math.round(impliedOver * 1000) / 1000,
-    modelProbability: Math.round(consensusOverFair * 1000) / 1000,
+    modelProbability: null,
     edge: Math.round(edge * 1000) / 1000,
     confidence,
-    riskLevel: RISK_BY_CONFIDENCE[confidence],
+    riskLevel: "unassessed",
+    probabilityBasis: "no_vig_market_consensus",
+    noVigConsensusProbability: Math.round(consensusOverFair * 1000) / 1000,
+    independentModelProbability: null,
+    bookCount: books.length,
+    executablePriceVerified: false,
     source: "The Odds API (no-vig consensus)",
-    updatedAt: row.updated_at,
+    updatedAt: oldestQuoteTime(books),
   };
 }
 

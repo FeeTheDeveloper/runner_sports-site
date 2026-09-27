@@ -1,4 +1,6 @@
+import "server-only";
 import type { BetResult, TrackedBet, TrackerSummary } from "@/types";
+import { requireTrackerOwner } from "@/lib/auth/tracker";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 
 interface TrackedBetRow {
@@ -36,10 +38,12 @@ function mapRow(row: TrackedBetRow): TrackedBet {
 }
 
 export async function getTrackedBets(): Promise<TrackedBet[]> {
+  const ownerId = await requireTrackerOwner();
   const supabase = getSupabaseServerClient();
   const { data, error } = await supabase
     .from("tracked_bets")
     .select("*")
+    .eq("owner_user_id", ownerId)
     .order("bet_date", { ascending: false });
   if (error) throw error;
   return (data as unknown as TrackedBetRow[]).map(mapRow);
@@ -99,6 +103,7 @@ function computeProfit(result: BetResult, odds: number, stake: number): number {
 }
 
 export async function addTrackedBet(input: NewTrackedBet): Promise<TrackedBet> {
+  const ownerId = await requireTrackerOwner();
   const result = input.result ?? "pending";
   const profit = computeProfit(result, input.odds, input.stake);
 
@@ -106,6 +111,7 @@ export async function addTrackedBet(input: NewTrackedBet): Promise<TrackedBet> {
   const { data, error } = await supabase
     .from("tracked_bets")
     .insert({
+      owner_user_id: ownerId,
       bet_date: input.date,
       sport: input.sport,
       event: input.event,

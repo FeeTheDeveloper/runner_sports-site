@@ -90,20 +90,26 @@ All endpoints return JSON as `{ data, meta? }`; missing resources return a struc
 | `GET /api/espn/records` | `sport`, `league`, `dataType`, `entityId`, `limit`, `offset` |
 | `POST /api/checkout` | Authenticated Stripe Checkout Session creation by Runner plan key |
 | `POST /api/billing/portal` | Authenticated Stripe Customer Portal session creation |
+| `GET /api/billing/status` | Authenticated subscription tier, access period, research access and explicit unavailable model/usage status |
 | `POST /api/webhooks/stripe` | Signature-verified subscription lifecycle webhook |
-| `GET`/`POST /mcp` | Streamable HTTP MCP connector for Runner search, plays, matchup analysis, bounded published intelligence, and token-protected allowlisted control requests |
+| `GET`/`POST /mcp` | Read-only Streamable HTTP MCP connector for Runner search, market consensus research, matchup analysis, and bounded published intelligence |
 
 ## Runner MCP connector
 
-The production connector URL is `https://werunsportsandanalytics.com/mcp`. It is a tool-only
+The intended connector URL after verified deployment is `https://werunsportsandanalytics.com/mcp`. The local implementation is a tool-only
 MCP server with standard `search` and `fetch` tools, matchup/edge analysis, bounded published
-intelligence reads, and separately authenticated allowlisted control requests. It exposes
+intelligence reads. Remote command tools are disabled pending scoped authentication and approval receipts. It exposes
 analytics and source timestamps; it cannot place wagers or execute arbitrary commands.
 
 Validate locally with MCP Inspector against `http://localhost:3000/mcp`, then add the production
 HTTPS URL as a custom app/connector in ChatGPT Developer Mode after deployment.
 
-`lib/data/*.ts` read from Supabase, which is populated by the `sync-odds`, `sync-espn`, and
+Tracker API and data access require a verified Clerk identity with an active
+Runner entitlement. All tracker queries bind that identity as the owner, including
+dashboard/analytics consumers. Apply the ownership migration before rollout; see
+[the security release gates](docs/SECURITY_RELEASE_GATES_2026-09-26.md).
+
+`lib/data/*.ts` read from the approved Supabase project. The implemented ingestion paths are the `sync-odds`, `sync-espn`, and
 `sync-prediction-markets` cron jobs plus the Demon `runner_*` published-intelligence
 contract — see
 [SETUP.md](./SETUP.md) for required environment variables, provisioning, and known limitations.
@@ -120,3 +126,21 @@ See `.env.example` and [SETUP.md](./SETUP.md).
 | `npm run build` | Production build |
 | `npm run start` | Start production server |
 | `npm run lint` | Run ESLint |
+| `npm test` | Run tracker, authorization, MCP and market-truth regression tests |
+
+Billing setup and rollout requirements are documented in
+[the connection contract](docs/BILLING_CONNECTION_CONTRACT.md). New subscriptions
+remain disabled until provider bindings, approved terms and sandbox acceptance
+are complete. The suite also tests billing routes, real PostgreSQL event/checkout
+transactions, operations authorization, provider freshness and fan skins.
+
+Pull requests and pushes to `main`/`release/runner-production` run install,
+tests, lint, a production build and production dependency audit in
+`.github/workflows/quality.yml`. Provider secrets are not required by these
+offline gates. Live provider acceptance remains a separate release step.
+
+See [the connected-launch handoff](docs/RUNNER_CONNECTED_LAUNCH_2026-09-26.md)
+for current provider mismatches, the proposed commercial terms, team skins,
+AI representative requirements and exact release gates. `/admin/operations`
+is the protected owner workspace; it distinguishes configuration from verified
+runtime receipts and does not imply an installed monitoring worker.

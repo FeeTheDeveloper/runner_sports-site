@@ -4,18 +4,12 @@ import { useMemo, useState } from "react";
 import type { RunnerEdge } from "@/types";
 import SportsTable from "@/components/ui/SportsTable";
 import EdgeCard from "@/components/sports/EdgeCard";
-import ConfidenceBadge from "@/components/ui/ConfidenceBadge";
 import Badge from "@/components/ui/Badge";
 import EmptyState from "@/components/ui/EmptyState";
 import { formatOdds, formatPercent, formatSignedPercent, formatDateTime } from "@/lib/utils/format";
 
 const ALL = "all";
 
-const riskVariant = {
-  low: "success",
-  moderate: "warning",
-  high: "danger",
-} as const;
 
 export default function EdgeBoard({ edges }: { edges: RunnerEdge[] }) {
   const [sport, setSport] = useState(ALL);
@@ -73,10 +67,10 @@ export default function EdgeBoard({ edges }: { edges: RunnerEdge[] }) {
                 { key: "line", header: "Line", align: "right", render: (e) => <span className="font-mono">{e.line ?? "—"}</span> },
                 { key: "odds", header: "Odds", align: "right", render: (e) => <span className="font-mono">{e.odds !== undefined ? formatOdds(e.odds) : "—"}</span> },
                 { key: "implied", header: "Implied", align: "right", render: (e) => <span className="font-mono">{formatPercent(e.impliedProbability)}</span> },
-                { key: "model", header: "Runner", align: "right", render: (e) => <span className="font-mono text-accent">{formatPercent(e.modelProbability)}</span> },
-                { key: "edge", header: "Edge", align: "right", render: (e) => <span className="font-mono text-positive">{formatSignedPercent(e.edge)}</span> },
-                { key: "confidence", header: "Confidence", render: (e) => <ConfidenceBadge confidence={e.confidence} compact /> },
-                { key: "risk", header: "Risk", render: (e) => <Badge variant={riskVariant[e.riskLevel]} label={e.riskLevel} /> },
+                { key: "model", header: "No-vig consensus", align: "right", render: (e) => <span className="font-mono text-accent">{formatPercent(e.noVigConsensusProbability)}</span> },
+                { key: "edge", header: "Price gap", align: "right", render: (e) => <span className="font-mono text-positive">{formatSignedPercent(e.edge)}</span> },
+                { key: "confidence", header: "Book depth", render: (e) => <span>{e.bookCount ?? "—"} books</span> },
+                { key: "risk", header: "Risk", render: () => <span>Unassessed</span> },
                 { key: "updated", header: "Updated", align: "right", render: (e) => <span className="text-xs text-text-subtle">{formatDateTime(e.updatedAt)}</span> },
               ]}
             />

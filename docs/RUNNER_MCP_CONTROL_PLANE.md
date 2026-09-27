@@ -1,5 +1,19 @@
 # Runner MCP Control Plane
 
+## Current security boundary (2026-09-26)
+
+The public MCP connector is now read-only. Remote command registration and
+result lookup have been removed. Legacy control data functions reject every
+request before touching Supabase, even when a bearer token is configured.
+Secrets must never be supplied through model-visible tool arguments.
+
+Re-enabling controls requires transport-bound identity, per-command capabilities,
+tenant/resource scope, durable approvals for external effects, scoped result
+access and atomic idempotency. FORCE_PUBLISH must never use a broad shared token.
+No environment toggle currently re-enables remote controls.
+
+## Historical design (superseded; do not enable)
+
 The MCP route retains the existing read-only `search`, `fetch`,
 `get_best_plays`, and `run_matchup_analysis` tools. It also exposes bounded
 Runner read tools for status, live intelligence, signals, totals, pick health,
@@ -16,8 +30,5 @@ Two control tools are intentionally narrow:
 arbitrary executable. The Demon worker owns command execution and writes
 `runner_control_results`.
 
-Set the server-only `RUNNER_MCP_BEARER_TOKEN` in `.env.local` or Vercel to
-enable control tools. The token is supplied to the control tool input by the
-trusted MCP caller and is checked server-side; it is never included in
-`.env.example` with a value or sent to browser code. Missing/invalid tokens are
-rejected.
+The earlier shared-token design has been withdrawn. `RUNNER_MCP_BEARER_TOKEN`
+remains a reserved compatibility variable and does not enable any control tool.

@@ -32,37 +32,42 @@ export function boundedLimit(limit = 25): number {
   return Math.min(Math.max(Math.trunc(limit || 25), 1), 100);
 }
 
-export function freshnessFor(row: RunnerRow, maxAgeMinutes = 15): RunnerFreshnessState {
-  const value = row.freshness?.toLowerCase();
-  if (value === "fresh" || value === "live") return "FRESH";
-  if (value === "delayed") return "DELAYED";
-  if (value === "stale") return "STALE";
-  const timestamp = row.as_of ?? row.updated_at;
-  if (!timestamp) return "OFFLINE";
-  const age = Date.now() - Date.parse(timestamp);
-  if (!Number.isFinite(age)) return "OFFLINE";
-  if (age <= maxAgeMinutes * 60_000) return "FRESH";
-  if (age <= maxAgeMinutes * 60_000 * 2) return "DELAYED";
-  return "STALE";
+/** Receipt timestamps require a real calendar date and explicit UTC/offset. */
+export function validRunnerTimestamp(timestamp: unknown, now = Date.now()): number | null {
+  if (typeof timestamp !== "string" || !Number.isFinite(now)) return null;
+  const match = /^(\d{4}-\d{2}-\d{2})[T ]([01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d{1,9})?(?:Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)$/u.exec(timestamp);
+  if (!match) return null;
+  const date = match[1];
+  const day = Date.parse(`${date}T00:00:00Z`);
+  if (!Number.isFinite(day) || new Date(day).toISOString().slice(0, 10) !== date) return null;
+  const time = Date.parse(timestamp);
+  return Number.isFinite(time) && time <= now ? time : null;
 }
 
-export function freshnessSummary(rows: RunnerRow[], maxAgeMinutes = 15) {
-  const states = rows.map((row) => freshnessFor(row, maxAgeMinutes));
+function receiptTime(row: RunnerRow, now: number): number | null {
+  // A bad authoritative as_of must not be rescued by a later storage update.
+  return validRunnerTimestamp(row.as_of ?? row.updated_at, now);
+}
+
+const freshnessSeverity: Record<RunnerFreshnessState, number> = { FRESH: 0, DELAYED: 1, STALE: 2, OFFLINE: 3 };
+
+export function freshnessFor(row: RunnerRow, maxAgeMinutes = 15, now = Date.now()): RunnerFreshnessState {
+  const timestamp = receiptTime(row, now);
+  if (timestamp === null || !Number.isFinite(now) || !Number.isFinite(maxAgeMinutes) || maxAgeMinutes <= 0) return "OFFLINE";
+  const age = now - timestamp;
+  const ageState: RunnerFreshnessState = age <= maxAgeMinutes * 60_000 ? "FRESH" : age <= maxAgeMinutes * 120_000 ? "DELAYED" : "STALE";
+  const value = typeof row.freshness === "string" ? row.freshness.trim().toLowerCase() : "";
+  const reported: RunnerFreshnessState = value === "offline" || value === "unavailable" || value === "unknown" ? "OFFLINE" : value === "stale" ? "STALE" : value === "delayed" ? "DELAYED" : "FRESH";
+  // Saved labels can lower confidence, never extend a receipt's lifetime.
+  return freshnessSeverity[reported] > freshnessSeverity[ageState] ? reported : ageState;
+}
+
+export function freshnessSummary(rows: RunnerRow[], maxAgeMinutes = 15, now = Date.now()) {
+  const states = rows.map((row) => freshnessFor(row, maxAgeMinutes, now));
+  const times = rows.map(row => receiptTime(row, now)).filter((value): value is number => value !== null);
   return {
-    state: states.length === 0
-      ? "OFFLINE"
-      : states.includes("STALE")
-        ? "STALE"
-        : states.includes("DELAYED")
-          ? "DELAYED"
-          : states.includes("FRESH")
-            ? "FRESH"
-            : "OFFLINE",
-    asOf: rows
-      .map((row) => row.as_of ?? row.updated_at)
-      .filter((value): value is string => typeof value === "string")
-      .sort()
-      .at(-1) ?? null,
+    state: states.length ? states.reduce((worst, state) => freshnessSeverity[state] > freshnessSeverity[worst] ? state : worst) : "OFFLINE",
+    asOf: times.length ? new Date(Math.max(...times)).toISOString() : null,
   } satisfies { state: RunnerFreshnessState; asOf: string | null };
 }
 

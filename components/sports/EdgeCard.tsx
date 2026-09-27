@@ -1,13 +1,7 @@
 import type { RunnerEdge } from "@/types";
 import Badge from "@/components/ui/Badge";
-import ConfidenceBadge from "@/components/ui/ConfidenceBadge";
 import { formatOdds, formatPercent, formatSignedPercent } from "@/lib/utils/format";
 
-const riskVariant = {
-  low: "success",
-  moderate: "warning",
-  high: "danger",
-} as const;
 
 export default function EdgeCard({ edge }: { edge: RunnerEdge }) {
   return (
@@ -16,7 +10,7 @@ export default function EdgeCard({ edge }: { edge: RunnerEdge }) {
         <span className="font-mono text-xs text-text-subtle">#{edge.rank}</span>
         <div className="flex items-center gap-2">
           <Badge variant="accent" label={edge.sport} />
-          <Badge variant={riskVariant[edge.riskLevel]} label={`${edge.riskLevel} risk`} />
+          <Badge variant="default" label="Risk unassessed" />
         </div>
       </div>
 
@@ -38,16 +32,16 @@ export default function EdgeCard({ edge }: { edge: RunnerEdge }) {
           <p className="text-text">{formatPercent(edge.impliedProbability)}</p>
         </div>
         <div>
-          <p className="text-[10px] uppercase tracking-wide text-text-subtle mb-1">Runner</p>
-          <p className="text-accent">{formatPercent(edge.modelProbability)}</p>
+          <p className="text-[10px] uppercase tracking-wide text-text-subtle mb-1">No-vig consensus</p>
+          <p className="text-accent">{formatPercent(edge.noVigConsensusProbability)}</p>
         </div>
       </div>
 
       <div className="flex items-center justify-between text-xs">
         <span className="text-text-muted">
-          Edge <span className="font-mono text-positive">{formatSignedPercent(edge.edge)}</span>
+          Price gap <span className="font-mono text-positive">{formatSignedPercent(edge.edge)}</span>
         </span>
-        <ConfidenceBadge confidence={edge.confidence} compact />
+        <span>{edge.bookCount ?? "—"} books · Price unverified</span>
       </div>
     </div>
   );

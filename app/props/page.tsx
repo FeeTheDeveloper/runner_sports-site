@@ -17,7 +17,7 @@ export default async function PropsPage({ searchParams }: { searchParams: Promis
       <div>
         <h1 className="text-xl font-semibold text-text">Player Prop Intelligence</h1>
         <p className="mt-1 text-sm text-text-muted">
-          Live player markets with sportsbook lines, no-vig consensus probability, and verified player identity.
+          Delayed player-market quotes at matching lines. No-vig consensus is a market calculation; independent projections and executable prices are unverified. Quotes older than 20 minutes are suppressed.
         </p>
       </div>
       <PropsExplorer props={props} initialGameId={gameId} />

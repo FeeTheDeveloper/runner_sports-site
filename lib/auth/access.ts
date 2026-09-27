@@ -2,6 +2,8 @@ import "server-only";
 import { currentUser } from "@clerk/nextjs/server";
 import { isClerkConfigured } from "@/lib/auth/config";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { getBillingSubscriptions, isActiveSubscription } from "@/lib/billing/subscriptions";
+import { planRank, type PaidPlanId } from "@/lib/billing/plans";
 
 export type RunnerRole = "public" | "authenticated" | "subscriber" | "admin";
 export type RunnerEntitlement =
@@ -26,6 +28,8 @@ export interface RunnerAccess {
   expiresAt: string | null;
   fullAccess: boolean;
   isAdmin: boolean;
+  paidPlan: PaidPlanId | null;
+  billingState: "not_connected" | "synced" | "unavailable";
 }
 
 const NO_ACCESS: RunnerAccess = {
@@ -38,9 +42,9 @@ const NO_ACCESS: RunnerAccess = {
   expiresAt: null,
   fullAccess: false,
   isAdmin: false,
+  paidPlan: null,
+  billingState: "not_connected",
 };
-
-const ACTIVE_SUBSCRIPTION_STATUSES = new Set(["active", "trialing"]);
 
 function adminBootstrapEmails(): string[] {
   return (process.env.RUNNER_ADMIN_BOOTSTRAP_EMAILS ?? "")
@@ -58,14 +62,11 @@ interface ManualGrantRow {
 
 async function findActiveManualGrant(userId: string, email: string | null): Promise<ManualGrantRow | null> {
   const supabase = getSupabaseServerClient();
-  const identityFilters = [`clerk_user_id.eq.${userId}`];
-  if (email) identityFilters.push(`email.eq.${email.toLowerCase()}`);
-
   const { data, error } = await supabase
     .from("manual_access_grants")
     .select("clerk_user_id, email, active, expires_at")
     .eq("active", true)
-    .or(identityFilters.join(","));
+    .eq("clerk_user_id", userId);
 
   if (error || !data) return null;
 
@@ -73,13 +74,26 @@ async function findActiveManualGrant(userId: string, email: string | null): Prom
   const active = (data as unknown as ManualGrantRow[]).find(
     (grant) => !grant.expires_at || new Date(grant.expires_at).getTime() > now,
   );
-  return active ?? null;
+  if (active || !email) return active ?? null;
+
+  // An existing identity binding never transfers via a matching email. Use
+  // scalar equality parameters, not a filter expression containing email text.
+  const { data: emailGrants, error: emailError } = await supabase
+    .from("manual_access_grants")
+    .select("clerk_user_id, email, active, expires_at")
+    .eq("active", true)
+    .is("clerk_user_id", null)
+    .eq("email", email.toLowerCase());
+  if (emailError || !emailGrants) return null;
+  return (emailGrants as unknown as ManualGrantRow[]).find(
+    (grant) => !grant.expires_at || new Date(grant.expires_at).getTime() > now,
+  ) ?? null;
 }
 
 /**
  * Single source of truth for what a signed-in user is allowed to see.
  * Combines: admin bootstrap allowlist, Clerk role metadata, Stripe-driven
- * subscription metadata (synced by the webhook), and manually granted access
+ * authoritative Supabase subscription mirror, and manually granted access
  * (admin-issued comps, recorded in Supabase).
  */
 export async function getRunnerAccess(): Promise<RunnerAccess> {
@@ -89,7 +103,9 @@ export async function getRunnerAccess(): Promise<RunnerAccess> {
   if (!user) return NO_ACCESS;
 
   const userId = user.id;
-  const email = user.primaryEmailAddress?.emailAddress ?? user.emailAddresses[0]?.emailAddress ?? null;
+  const email = user.primaryEmailAddress?.verification?.status === "verified"
+    ? user.primaryEmailAddress.emailAddress
+    : null;
   const meta = (user.privateMetadata ?? {}) as Record<string, unknown>;
 
   const isBootstrapAdmin = email ? adminBootstrapEmails().includes(email.toLowerCase()) : false;
@@ -106,28 +122,32 @@ export async function getRunnerAccess(): Promise<RunnerAccess> {
       expiresAt: null,
       fullAccess: true,
       isAdmin: true,
+      paidPlan: null,
+      billingState: "not_connected",
     };
   }
 
-  const subscriptionStatus = typeof meta.subscriptionStatus === "string" ? meta.subscriptionStatus : undefined;
-  const runnerPlan = typeof meta.runnerPlan === "string" ? meta.runnerPlan : undefined;
-  const stripeActive = Boolean(runnerPlan) && subscriptionStatus !== undefined && ACTIVE_SUBSCRIPTION_STATUSES.has(subscriptionStatus);
-
-  if (stripeActive) {
+  const billing = await getBillingSubscriptions(userId).then(rows => ({ rows, unavailable: false }))
+    .catch(() => ({ rows: [], unavailable: true }));
+  const activeSubscription = billing.rows.filter(row => isActiveSubscription(row))
+    .sort((a, b) => planRank(b.plan) - planRank(a.plan))[0];
+  if (activeSubscription) {
     return {
       authenticated: true,
       userId,
       email,
       role: "subscriber",
-      entitlement: subscriptionStatus === "trialing" ? "trial" : "active",
+      entitlement: activeSubscription.status === "trialing" ? "trial" : "active",
       source: "stripe",
-      expiresAt: null,
+      expiresAt: activeSubscription.period_end,
       fullAccess: true,
       isAdmin: false,
+      paidPlan: activeSubscription.plan,
+      billingState: "synced",
     };
   }
 
-  const manualGrant = await findActiveManualGrant(userId, email);
+  const manualGrant = await findActiveManualGrant(userId, email).catch(() => null);
   if (manualGrant) {
     return {
       authenticated: true,
@@ -139,6 +159,8 @@ export async function getRunnerAccess(): Promise<RunnerAccess> {
       expiresAt: manualGrant.expires_at,
       fullAccess: true,
       isAdmin: false,
+      paidPlan: null,
+      billingState: billing.unavailable ? "unavailable" : "synced",
     };
   }
 
@@ -147,11 +169,13 @@ export async function getRunnerAccess(): Promise<RunnerAccess> {
     userId,
     email,
     role: "authenticated",
-    entitlement: subscriptionStatus === "past_due" || subscriptionStatus === "canceled" ? (subscriptionStatus as RunnerEntitlement) : "free",
-    source: runnerPlan ? "stripe" : "none",
+    entitlement: billing.rows.some(row => row.status === "past_due") ? "past_due" : billing.rows.some(row => row.status === "canceled") ? "canceled" : "free",
+    source: billing.rows.length ? "stripe" : "none",
     expiresAt: null,
     fullAccess: false,
     isAdmin: false,
+    paidPlan: null,
+    billingState: billing.unavailable ? "unavailable" : billing.rows.length ? "synced" : "not_connected",
   };
 }
 

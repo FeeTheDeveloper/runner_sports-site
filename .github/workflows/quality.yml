@@ -1,0 +1,31 @@
+name: Site production gates
+
+on:
+  pull_request:
+  push:
+    branches: [main, release/runner-production]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Security and data-truth regression tests
+        run: npm test
+      - name: Lint
+        run: npm run lint
+      - name: Production build (no provider secrets)
+        run: npm run build
+      - name: Production dependency audit
+        run: npm audit --omit=dev

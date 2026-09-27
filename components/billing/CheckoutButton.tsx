@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import type { PaidPlanId } from "@/lib/billing/plans";
+import type { BillingInterval, PaidPlanId } from "@/lib/billing/plans";
 
-export default function CheckoutButton({ plan, enabled }: { plan: PaidPlanId; enabled: boolean }) {
+export default function CheckoutButton({ plan, interval, enabled, label }: { plan: PaidPlanId; interval: BillingInterval; enabled: boolean; label?: string }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
 
@@ -14,7 +14,7 @@ export default function CheckoutButton({ plan, enabled }: { plan: PaidPlanId; en
       const response = await fetch("/api/checkout", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ plan }),
+        body: JSON.stringify({ plan, interval }),
       });
       const payload = (await response.json()) as { url?: string; error?: string };
       if (!response.ok || !payload.url) throw new Error(payload.error ?? "Checkout is unavailable.");
@@ -33,7 +33,7 @@ export default function CheckoutButton({ plan, enabled }: { plan: PaidPlanId; en
         onClick={beginCheckout}
         className="w-full rounded-lg bg-accent px-4 py-3 text-xs font-black uppercase tracking-wider text-white disabled:cursor-not-allowed disabled:opacity-45"
       >
-        {pending ? "Opening secure checkout…" : enabled ? "Choose access" : "Stripe price pending"}
+        {pending ? "Opening secure checkout…" : enabled ? (label ?? "Choose access") : "Coming soon"}
       </button>
       {error ? <p className="mt-2 text-xs text-accent">{error}</p> : null}
     </div>

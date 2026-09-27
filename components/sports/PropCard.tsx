@@ -1,6 +1,5 @@
 import type { PlayerProp } from "@/types";
 import Badge from "@/components/ui/Badge";
-import ConfidenceBadge from "@/components/ui/ConfidenceBadge";
 import ProbabilityBar from "@/components/ui/ProbabilityBar";
 import PlayerHeadshot from "@/components/sports/PlayerHeadshot";
 import { formatOdds, formatPercent, formatSignedPercent } from "@/lib/utils/format";
@@ -60,7 +59,7 @@ export default function PropCard({ prop }: { prop: PlayerProp }) {
 
       <div className="flex items-center justify-between text-xs">
         <span className="text-text-muted">
-          Edge <span className={`font-mono ${isOverLean ? "text-positive" : "text-negative"}`}>{formatSignedPercent(prop.edge)}</span>
+          Over price gap <span className={`font-mono ${isOverLean ? "text-positive" : "text-negative"}`}>{formatSignedPercent(prop.edge)}</span>
         </span>
         <span className="text-text-muted">
           Hit rate (L10){" "}
@@ -68,7 +67,7 @@ export default function PropCard({ prop }: { prop: PlayerProp }) {
             {prop.recentHitRate !== undefined ? formatPercent(prop.recentHitRate, 0) : "—"}
           </span>
         </span>
-        <ConfidenceBadge confidence={prop.confidence} compact />
+        <span className="text-text-subtle">{prop.bookCount ?? "—"} books</span>
       </div>
 
       {prop.matchupContext && (

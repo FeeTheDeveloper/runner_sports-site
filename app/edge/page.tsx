@@ -16,9 +16,9 @@ export default async function EdgePage() {
       <div>
         <h1 className="text-xl font-semibold text-text">Runner Edge Board</h1>
         <p className="mt-1 text-sm text-text-muted">
-          Ranked by RSA EDGE MODEL v0.1: a no-vig consensus across every book quoting a market, compared against one
+          Ranked by no-vig consensus across fresh books quoting the same market and line, compared against one
           book&apos;s own price. Edge percentage reflects that consensus probability minus the book&apos;s implied
-          probability — a market-pricing signal, not a backtested prediction.
+          probability. Quotes older than 20 minutes are suppressed. Book depth describes coverage; predictive confidence and betting risk are unassessed. Executable prices are unverified.
         </p>
       </div>
       <EdgeBoard edges={edges} />

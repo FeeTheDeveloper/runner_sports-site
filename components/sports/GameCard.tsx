@@ -1,7 +1,6 @@
 import Link from "next/link";
 import type { Game } from "@/types";
 import Badge from "@/components/ui/Badge";
-import ConfidenceBadge from "@/components/ui/ConfidenceBadge";
 import ProbabilityBar from "@/components/ui/ProbabilityBar";
 import TeamLogo from "@/components/sports/TeamLogo";
 import { formatLine, formatOdds, formatTime } from "@/lib/utils/format";
@@ -30,7 +29,7 @@ export default function GameCard({ game, showFactors = false }: GameCardProps) {
           <Badge variant="accent" label={game.league} />
           <Badge variant={statusVariant[game.status]} label={game.status === "live" ? "LIVE" : formatTime(game.startsAt)} />
         </div>
-        <ConfidenceBadge confidence={game.confidence} compact />
+        <span className="text-xs text-text-subtle">{game.bookCount ?? "—"} books</span>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
@@ -39,15 +38,15 @@ export default function GameCard({ game, showFactors = false }: GameCardProps) {
       </div>
 
       <div className="grid grid-cols-3 gap-2 rounded-md border border-border bg-surface-2 p-3 text-center font-mono text-xs">
-        <MarketCell label="Spread" value={`${formatLine(game.spread.home)} (${formatOdds(game.spread.line)})`} />
-        <MarketCell label="Total" value={`${game.total.line}`} />
+        <MarketCell label="Spread" value={game.spread.home === 0 ? "—" : `${formatLine(game.spread.line)} (${formatOdds(game.spread.home)})`} />
+        <MarketCell label="Total" value={game.total.over === 0 ? "—" : `${game.total.line}`} />
         <MarketCell label="Moneyline" value={`${formatOdds(game.moneyline.home)}`} />
       </div>
 
-      <ProbabilityBar
-        label={`Runner projects ${projectedTeam?.abbreviation ?? "—"} to win`}
-        value={game.modelProbability}
-      />
+      {game.noVigConsensusProbability == null ? <p className="text-xs text-text-subtle">Fresh moneyline prices unavailable</p> : <ProbabilityBar
+        label={`No-vig consensus: ${projectedTeam?.abbreviation ?? "—"}`}
+        value={game.noVigConsensusProbability}
+      />}
 
       {showFactors && game.keyFactors.length > 0 && (
         <ul className="space-y-1 border-t border-border pt-3 text-xs text-text-muted">

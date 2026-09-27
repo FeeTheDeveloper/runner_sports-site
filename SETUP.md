@@ -1,5 +1,14 @@
 # Setup
 
+## Current identity and billing release gate
+
+Read [BILLING_CONNECTION_CONTRACT.md](docs/BILLING_CONNECTION_CONTRACT.md)
+before enabling paid access. Subscription authority now lives in the verified
+Supabase billing mirror, not Clerk billing metadata. The new billing migration,
+exact Clerk/Supabase/Stripe bindings, sandbox lifecycle tests and approved plan/
+usage terms are required. `RUNNER_CHECKOUT_ENABLED` defaults to false. Existing
+environment values and provider settings were not changed by the implementation.
+
 ## 1. Supabase
 
 A Supabase project must be provisioned for this app. Keep its project reference,
@@ -103,8 +112,11 @@ curl -X POST http://localhost:3000/api/cron/sync-espn -H "Authorization: Bearer 
    tax until a business tax registration has been added in Stripe Tax.
 5. After deployment, connect `https://werunsportsandanalytics.com/mcp` in ChatGPT Developer Mode
    and rescan/refresh the connector whenever MCP tool metadata changes.
-   6. Apply the Runner published-intelligence migration and set the optional
-      `RUNNER_MCP_BEARER_TOKEN` only when authenticated MCP control commands are needed.
+6. Apply the Runner published-intelligence migration. MCP is read-only;
+   `RUNNER_MCP_BEARER_TOKEN` cannot enable remote command tools.
+7. Before deploying tracker changes, apply
+   `20260926000000_tracker_ownership.sql` and complete the two-account checks in
+   `docs/SECURITY_RELEASE_GATES_2026-09-26.md`. Legacy rows remain quarantined.
 
 ## Known limitations (don't silently paper over these)
 
@@ -126,8 +138,8 @@ curl -X POST http://localhost:3000/api/cron/sync-espn -H "Authorization: Bearer 
   every ingestion tier fails soft — an ESPN outage degrades enrichment (`espn_records` goes stale) but
   never blocks the market feed. ESPN odds are a cross-check reference only; The Odds API remains the
   market source of truth.
-- **RSA EDGE MODEL v0.1 is an unbacktested heuristic** (no-vig consensus vs. one book's price), not a trained
-  predictive model — see `lib/models/edgeCalculator.ts` for the exact math and documented weaknesses.
+- **Independent model execution is unavailable.** The research board separates no-vig market consensus from model forecasts;
+  missing predictions and executable edges remain null. See `lib/models/edgeCalculator.ts` and `docs/MARKET_TRUTH_CONTRACT.md`.
 - **Responsible-gambling disclaimer copy is a placeholder** (`components/legal/ResponsibleGamblingNotice.tsx`) —
   get it reviewed by counsel for your state-specific requirements before public promotion.
 - **Prediction-market execution is disabled.** The integration reads public Kalshi and Polymarket market data only.

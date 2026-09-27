@@ -1,5 +1,6 @@
 import type { Confidence, PlayerProp } from "@/types";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
+import { comparablePropQuotes, oldestQuoteTime } from "@/lib/models/marketQuotes";
 import {
   americanToImpliedProbability,
   classifyConfidence,
@@ -29,17 +30,16 @@ interface PropRow {
   source: PlayerProp["source"];
 }
 
-function mapRowToProp(row: PropRow): PlayerProp {
-  const consensusOverFair =
-    row.book_odds.length > 0
-      ? computeConsensusProbability(
-          row.book_odds.map((b) => devigTwoWay(b.overOdds, b.underOdds).probabilityA),
-        )
-      : 0.5;
+function mapRowToProp(row: PropRow): PlayerProp | null {
+  const books = comparablePropQuotes(row.book_odds);
+  if (books.length === 0) return null;
+  const consensusOverFair = computeConsensusProbability(
+    books.map((b) => devigTwoWay(b.overOdds, b.underOdds).probabilityA),
+  );
 
-  const confidence: Confidence = classifyConfidence(row.book_odds.length);
-  const displayed = row.book_odds[0];
-  const impliedOver = displayed ? americanToImpliedProbability(displayed.overOdds) : 0.5;
+  const confidence: Confidence = classifyConfidence(books.length);
+  const displayed = books[0];
+  const impliedOver = americanToImpliedProbability(displayed.overOdds);
 
   return {
     id: row.id,
@@ -56,7 +56,11 @@ function mapRowToProp(row: PropRow): PlayerProp {
     confidence,
     recentHitRate: row.recent_hit_rate ?? undefined,
     matchupContext: row.matchup_context ?? undefined,
-    source: row.source,
+    probabilityBasis: "no_vig_market_consensus",
+    bookCount: books.length,
+    independentModelProbability: null,
+    quoteCapturedAt: oldestQuoteTime(books),
+    source: { ...row.source, dataType: "calculation", freshness: "delayed" },
   };
 }
 
@@ -68,12 +72,12 @@ export async function getProps(): Promise<PlayerProp[]> {
     .order("updated_at", { ascending: false })
     .limit(500);
   if (error) throw error;
-  return (data as unknown as PropRow[]).map(mapRowToProp);
+  return (data as unknown as PropRow[]).map(mapRowToProp).filter((prop): prop is PlayerProp => prop !== null);
 }
 
 export async function getPropsByGame(gameId: string): Promise<PlayerProp[]> {
   const supabase = getSupabaseServerClient();
   const { data, error } = await supabase.from("props").select("*").eq("game_id", gameId);
   if (error) throw error;
-  return (data as unknown as PropRow[]).map(mapRowToProp);
+  return (data as unknown as PropRow[]).map(mapRowToProp).filter((prop): prop is PlayerProp => prop !== null);
 }

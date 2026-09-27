@@ -7,10 +7,11 @@ import Header from "@/components/navigation/Header";
 import AgentNavigator from "@/components/navigation/AgentNavigator";
 import ResponsibleGamblingNotice from "@/components/legal/ResponsibleGamblingNotice";
 import RunnerTicker from "@/components/marketing/RunnerTicker";
+import GameDaySkinSelector from "@/components/theme/GameDaySkinSelector";
 
 export default function AppShell({ children, isAdmin = false }: { children: React.ReactNode; isAdmin?: boolean }) {
   const pathname = usePathname();
-  const publicPaths = ["/", "/sign-in", "/sign-up", "/pricing", "/checkout/success", "/checkout/cancel"];
+  const publicPaths = ["/", "/sign-in", "/sign-up", "/pricing", "/checkout/success", "/checkout/cancel", "/sunday"];
 
   if (publicPaths.some((path) => pathname === path || (path !== "/" && pathname.startsWith(`${path}/`)))) {
     return <>{children}</>;
@@ -21,6 +22,7 @@ export default function AppShell({ children, isAdmin = false }: { children: Reac
       <Sidebar isAdmin={isAdmin} />
       <div className="flex flex-1 flex-col min-w-0">
         <Header />
+        <div className="skin-context-bar"><span>RUNNER / GAME DAY</span><GameDaySkinSelector compact /></div>
         <RunnerTicker />
         <main className="app-content flex-1 px-4 py-6 pb-24 md:px-8 md:py-8 md:pb-24 xl:px-10">
           <div className="mx-auto w-full max-w-[1500px]">

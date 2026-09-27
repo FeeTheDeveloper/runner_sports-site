@@ -6,7 +6,7 @@
 | Forecasts, signals, totals, game flow | Demon/model pipeline | Present source timestamps and freshness |
 | Pick health | Demon validation/health pipeline | Display healthy, watch, stale, or blocked |
 | Research evidence | Demon research bridge | Preserve source URL/name and retrieval time |
-| Authenticated control commands | Site MCP control plane | Persist an allowlisted request only |
+| Remote control commands | Disabled pending scoped identity and approvals | No public MCP command writes or private result reads |
 | Command execution and results | Demon worker | Claim, execute, and write result records |
 | Customer UI, API, Clerk, Stripe | `runner_sports-site` | Enforce presentation and access rules |
 

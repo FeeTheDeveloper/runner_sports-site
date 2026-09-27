@@ -11,7 +11,6 @@ import EdgeCard from "@/components/sports/EdgeCard";
 import SectionHeader from "@/components/ui/SectionHeader";
 import SportsTable from "@/components/ui/SportsTable";
 import Badge from "@/components/ui/Badge";
-import ConfidenceBadge from "@/components/ui/ConfidenceBadge";
 import TrendIndicator from "@/components/ui/TrendIndicator";
 import EmptyState from "@/components/ui/EmptyState";
 import { formatOdds, formatPercent, formatSignedPercent, formatCurrency } from "@/lib/utils/format";
@@ -20,7 +19,6 @@ import Paywall from "@/components/auth/Paywall";
 
 export const dynamic = "force-dynamic";
 
-const confidenceScore = { high: 1, moderate: 0.66, low: 0.33 } as const;
 
 export default async function DashboardPage() {
   const access = await getRunnerAccess();
@@ -38,26 +36,23 @@ export default async function DashboardPage() {
   const topEdges = edges.slice(0, 5);
   const featuredProps = props.slice(0, 4);
 
-  const activeMarkets = games.length * 3 + props.length;
+  const activeMarkets = games.reduce((count, game) => count + Number(game.moneyline.home !== 0) + Number(game.spread.home !== 0) + Number(game.total.over !== 0), 0) + props.length;
   const topEdge = edges.reduce((max, e) => (e.edge > max.edge ? e : max), edges[0]);
-  const confidenceValues = [...games.map((g) => g.confidence), ...props.map((p) => p.confidence)];
-  const avgConfidence =
-    confidenceValues.reduce((sum, c) => sum + confidenceScore[c], 0) / (confidenceValues.length || 1);
 
   return (
     <div className="space-y-10">
       <div>
         <h1 className="text-xl font-semibold text-text">Executive Dashboard</h1>
         <p className="mt-1 text-sm text-text-muted">
-          Live sports intelligence overview, synced from The Odds API — no-vig market edges and tracked performance.
+          Delayed market research from The Odds API and your recorded results. Independent model predictions are unavailable.
         </p>
       </div>
 
       <section className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
-        <StatCard label="Games Today" value={upcomingGames.length} hint={`${games.length} tracked`} />
+        <StatCard label="Tracked Matchups" value={games.length} hint="Loaded game records" />
         <StatCard label="Active Markets" value={activeMarkets} hint="Across all sports" />
-        <StatCard label="Top Model Edge" value={topEdge ? formatSignedPercent(topEdge.edge) : "—"} hint={topEdge?.selection} />
-        <StatCard label="Avg. Confidence" value={formatPercent(avgConfidence, 0)} hint="Games + props" />
+        <StatCard label="Largest Price Gap" value={topEdge ? formatSignedPercent(topEdge.edge) : "—"} hint={topEdge?.selection} />
+        <StatCard label="Independent Models" value="Unavailable" hint="Consensus is market derived" />
         <StatCard label="Tracked Bets" value={tracker.totalWagers} hint={`${tracker.pending} pending`} />
         <StatCard
           label="ROI"
@@ -69,7 +64,7 @@ export default async function DashboardPage() {
       <section>
         <SectionHeader
           title="Today's Games"
-          subtitle="Scheduled and live matchups with Runner win-probability projections"
+          subtitle="Matchups with delayed no-vig market consensus where fresh quotes exist"
           action={
             <Link href="/games" className="text-xs text-accent hover:underline">
               View all games →
@@ -90,7 +85,7 @@ export default async function DashboardPage() {
       <section>
         <SectionHeader
           title="Top Runner Edges"
-          subtitle="Ranked by no-vig consensus probability vs. a single book's price (RSA EDGE MODEL v0.1)"
+          subtitle="Ranked by no-vig consensus probability versus a single book price; execution is unverified"
           action={
             <Link href="/edge" className="text-xs text-accent hover:underline">
               Open Edge Board →
@@ -117,9 +112,9 @@ export default async function DashboardPage() {
               },
               { key: "odds", header: "Odds", align: "right", render: (e) => <span className="font-mono">{e.odds !== undefined ? formatOdds(e.odds) : "—"}</span> },
               { key: "implied", header: "Implied", align: "right", render: (e) => <span className="font-mono">{formatPercent(e.impliedProbability)}</span> },
-              { key: "model", header: "Runner", align: "right", render: (e) => <span className="font-mono text-accent">{formatPercent(e.modelProbability)}</span> },
-              { key: "edge", header: "Edge", align: "right", render: (e) => <span className="font-mono text-positive">{formatSignedPercent(e.edge)}</span> },
-              { key: "confidence", header: "Confidence", align: "right", render: (e) => <ConfidenceBadge confidence={e.confidence} compact /> },
+              { key: "model", header: "No-vig consensus", align: "right", render: (e) => <span className="font-mono text-accent">{formatPercent(e.noVigConsensusProbability)}</span> },
+              { key: "edge", header: "Price gap", align: "right", render: (e) => <span className="font-mono text-positive">{formatSignedPercent(e.edge)}</span> },
+              { key: "confidence", header: "Book depth", align: "right", render: (e) => <span>{e.bookCount ?? "—"} books</span> },
             ]}
           />
         </div>
@@ -133,7 +128,7 @@ export default async function DashboardPage() {
       <section>
         <SectionHeader
           title="Player Prop Intelligence"
-          subtitle="Representative Runner prop projections vs. posted lines"
+          subtitle="Posted prop lines and no-vig market consensus"
           action={
             <Link href="/props" className="text-xs text-accent hover:underline">
               View all props →
@@ -149,7 +144,7 @@ export default async function DashboardPage() {
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
         <section>
-          <SectionHeader title="Market Signals" subtitle="Live line movement and no-vig consensus deltas" />
+          <SectionHeader title="Market Signals" subtitle="Recorded line movement and no-vig consensus deltas" />
           <div className="space-y-3">
             {signals.map((signal) => (
               <div key={signal.id} className="rounded-lg border border-border bg-surface p-4">

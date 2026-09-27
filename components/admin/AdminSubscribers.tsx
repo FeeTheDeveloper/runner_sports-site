@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface ClerkUserResult {
   id: string;
@@ -27,6 +27,7 @@ interface ManualGrant {
 
 export default function AdminSubscribers() {
   const [query, setQuery] = useState("");
+  const searchInput = useRef<HTMLInputElement>(null);
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState("");
   const [results, setResults] = useState<ClerkUserResult[]>([]);
@@ -57,7 +58,12 @@ export default function AdminSubscribers() {
 
   async function searchUsers(event: React.FormEvent) {
     event.preventDefault();
-    if (!query.trim()) return;
+    if (searching) return;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(query.trim())) {
+      setSearchError("Enter a valid subscriber email address.");
+      searchInput.current?.focus();
+      return;
+    }
     setSearching(true);
     setSearchError("");
     try {
@@ -108,8 +114,12 @@ export default function AdminSubscribers() {
     <div className="space-y-8">
       <section className="data-panel space-y-4 p-6">
         <h2 className="text-sm font-black uppercase tracking-wider text-text">Find a subscriber</h2>
-        <form onSubmit={searchUsers} className="flex flex-wrap gap-2">
+        <form noValidate onSubmit={searchUsers} className="flex flex-wrap gap-2">
           <input
+            ref={searchInput}
+            aria-label="Subscriber email address"
+            aria-invalid={Boolean(searchError)}
+            aria-describedby={searchError ? "subscriber-search-error" : undefined}
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="user@example.com"
@@ -120,7 +130,7 @@ export default function AdminSubscribers() {
             {searching ? "Searching…" : "Search"}
           </button>
         </form>
-        {searchError && <p className="text-xs text-accent">{searchError}</p>}
+        {searchError && <p id="subscriber-search-error" role="alert" className="text-xs text-accent">{searchError}</p>}
         {results.length > 0 && (
           <ul className="space-y-2">
             {results.map((user) => (
@@ -167,6 +177,7 @@ export default function AdminSubscribers() {
             value={formExpires}
             onChange={(event) => setFormExpires(event.target.value)}
             type="date"
+            aria-label="Access expiry date (optional)"
             className="rounded-lg border border-border bg-canvas px-4 py-3 text-sm text-text outline-none"
           />
           <button

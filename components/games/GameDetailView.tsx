@@ -25,13 +25,14 @@ export default function GameDetailView({ game, props }: { game: Game; props: Pla
               <div><p className="text-[10px] font-bold uppercase tracking-widest text-text-subtle">{game.status}</p><p className="mt-2 text-sm font-black text-text">VS</p></div>
               <Team team={game.homeTeam} odds={game.moneyline.home} />
             </div>
-            <div className="mt-7"><ProbabilityBar label={`Runner projects ${projected.abbreviation}`} value={game.modelProbability} /></div>
+            <div className="mt-7">{game.noVigConsensusProbability == null ? <p className="text-sm text-text-muted">Fresh moneyline prices unavailable</p> : <ProbabilityBar label={`No-vig consensus: ${projected.abbreviation}`} value={game.noVigConsensusProbability} />}</div>
           </div>
           <div className="data-panel p-6">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-accent">Model Comparison</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-accent">Market Comparison</p>
             <div className="mt-5 space-y-4">
-              <Compare label="RSA probability" value={formatPercent(game.modelProbability)} accent />
-              <Compare label="Market implied" value={formatPercent(game.marketImpliedProbability)} />
+              <Compare label="No-vig consensus" value={game.marketDataStatus === "unavailable" ? "Unavailable" : formatPercent(game.noVigConsensusProbability)} accent />
+              <Compare label="Independent model" value="Unavailable" />
+              <Compare label="Market implied" value={game.marketDataStatus === "unavailable" ? "Unavailable" : formatPercent(game.marketImpliedProbability)} />
               <Compare label="ESPN predictor" value="Awaiting event data" />
             </div>
           </div>

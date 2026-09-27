@@ -5,9 +5,9 @@ import { useEffect, useState } from "react";
 const feeds = [
   ["RUNNER SPECIAL", "Best Plays of the Day updates after every market sync"],
   ["MARKET ALERT", "Line movement, no-vig probability and book consensus in one board"],
-  ["PLAYER LAB", "Props, usage, matchup splits and injury context without the noise"],
-  ["GAME CENTER", "ESPN facts meet sportsbook pricing and Runner model intelligence"],
-  ["SYSTEM FINDER", "Search historical situations and surface today's qualifiers"],
+  ["PLAYER LAB", "Available prop quotes with matching lines and source coverage"],
+  ["GAME CENTER", "Available ESPN facts and delayed sportsbook price comparisons"],
+  ["SYSTEM FINDER", "Verified historical systems and qualifiers are not yet available"],
   ["WE RUN SPORTS", "NFL · NBA · MLB · NHL · NCAA · WNBA · UFC · GOLF"],
 ];
 

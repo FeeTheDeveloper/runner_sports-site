@@ -1,5 +1,6 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse, type NextFetchEvent, type NextRequest } from "next/server";
+import { isClerkConfigured } from "@/lib/auth/config";
 
 const isProtectedRoute = createRouteMatcher([
   "/account(.*)",
@@ -22,16 +23,15 @@ const isProtectedRoute = createRouteMatcher([
   "/sportsbooks(.*)",
   "/admin(.*)",
 ]);
-const clerkConfigured = Boolean(
-  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY && process.env.CLERK_SECRET_KEY,
-);
-
 const protectedMiddleware = clerkMiddleware(async (auth, request) => {
   if (isProtectedRoute(request)) await auth.protect();
 });
 
 export default function middleware(request: NextRequest, event: NextFetchEvent) {
-  if (!clerkConfigured) return NextResponse.next();
+  if (!isClerkConfigured()) {
+    if (isProtectedRoute(request)) return NextResponse.redirect(new URL("/sign-in", request.url));
+    return NextResponse.next();
+  }
   return protectedMiddleware(request, event);
 }
 

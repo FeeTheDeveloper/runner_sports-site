@@ -292,6 +292,11 @@ export interface LineMovement {
 }
 
 export interface Game {
+  probabilityBasis?: "no_vig_market_consensus";
+  noVigConsensusProbability?: number | null;
+  independentModelProbability?: null;
+  bookCount?: number;
+  marketDataStatus?: "delayed" | "unavailable";
   id: string;
   sport: Sport;
   league: string;
@@ -303,8 +308,8 @@ export interface Game {
   spread: { home: number; away: number; line: number };
   total: { line: number; over: number; under: number };
   runnerProjectedWinner: string;
-  modelProbability: number;
-  marketImpliedProbability: number;
+  modelProbability: number | null;
+  marketImpliedProbability: number | null;
   confidence: Confidence;
   keyFactors: string[];
   confirmedMarkets?: ConfirmedMarket[];
@@ -312,6 +317,10 @@ export interface Game {
 }
 
 export interface PlayerProp {
+  quoteCapturedAt?: string;
+  probabilityBasis?: "no_vig_market_consensus";
+  bookCount?: number;
+  independentModelProbability?: null;
   id: string;
   gameId: string;
   player: Player;
@@ -345,10 +354,16 @@ export interface RunnerEdge {
   line?: number;
   odds?: number;
   impliedProbability: number;
-  modelProbability: number;
+  /** Null until an independent validated model output is connected. */
+  modelProbability: number | null;
+  probabilityBasis?: "no_vig_market_consensus";
+  noVigConsensusProbability?: number;
+  independentModelProbability?: null;
+  bookCount?: number;
+  executablePriceVerified?: false;
   edge: number;
   confidence: Confidence;
-  riskLevel: RiskLevel;
+  riskLevel: RiskLevel | "unassessed";
   source: string;
   updatedAt: string;
 }

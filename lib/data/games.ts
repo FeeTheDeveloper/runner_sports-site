@@ -10,6 +10,7 @@ import {
 import type { BookOddsSnapshot } from "@/lib/providers/oddsApi";
 import { confirmDerivativeMarkets } from "@/lib/models/marketConfirmation";
 import { resolveTeamSearchNames } from "@/lib/data/teamRegistry";
+import { isFreshQuote, validAmericanOdds } from "@/lib/models/marketQuotes";
 
 interface GameRow {
   id: string;
@@ -43,9 +44,12 @@ export function mapRowToGame(row: GameRow): Game {
     slug: row.sport_id,
   };
 
-  const moneylineBooks = row.book_odds.filter((b) => b.moneyline);
-  const spreadBooks = row.book_odds.filter((b) => b.spread);
-  const totalBooks = row.book_odds.filter((b) => b.total);
+  const freshBooks = [...new Map(row.book_odds.filter((b) => isFreshQuote(b.capturedAt))
+    .sort((a, b) => Date.parse(a.capturedAt) - Date.parse(b.capturedAt))
+    .map((b) => [b.sportsbook.trim().toLowerCase(), b])).values()];
+  const moneylineBooks = freshBooks.filter((b) => b.moneyline && validAmericanOdds(b.moneyline.home) && validAmericanOdds(b.moneyline.away));
+  const spreadBooks = freshBooks.filter((b) => b.spread && Number.isFinite(b.spread.line) && validAmericanOdds(b.spread.home) && validAmericanOdds(b.spread.away));
+  const totalBooks = freshBooks.filter((b) => b.total && Number.isFinite(b.total.line) && validAmericanOdds(b.total.over) && validAmericanOdds(b.total.under));
 
   const consensusHomeFair =
     moneylineBooks.length > 0
@@ -78,14 +82,19 @@ export function mapRowToGame(row: GameRow): Game {
     moneyline: displayedMoneyline,
     spread: displayedSpread,
     total: displayedTotal,
-    runnerProjectedWinner: isHomeFavorite ? row.home_team.id : row.away_team.id,
-    modelProbability: Math.round(favoriteFairProbability * 1000) / 1000,
+    runnerProjectedWinner: hasMoneylineOdds ? (isHomeFavorite ? row.home_team.id : row.away_team.id) : "",
+    probabilityBasis: "no_vig_market_consensus",
+    noVigConsensusProbability: hasMoneylineOdds ? Math.round(favoriteFairProbability * 1000) / 1000 : null,
+    independentModelProbability: null,
+    bookCount: moneylineBooks.length,
+    marketDataStatus: hasMoneylineOdds ? "delayed" : "unavailable",
+    modelProbability: null,
     marketImpliedProbability: hasMoneylineOdds
       ? Math.round(americanToImpliedProbability(favoriteMoneyline) * 1000) / 1000
-      : Math.round(favoriteFairProbability * 1000) / 1000,
+      : null,
     confidence,
     keyFactors: buildRunnerFactors(row, moneylineBooks.length, favoriteFairProbability),
-    confirmedMarkets: confirmDerivativeMarkets(row.book_odds),
+    confirmedMarkets: confirmDerivativeMarkets(freshBooks),
     source: row.source,
   };
 }
@@ -96,7 +105,7 @@ function buildRunnerFactors(row: GameRow, bookCount: number, favoriteProbability
   if (bookCount > 0) {
     factors.push(`${bookCount}-book no-vig moneyline consensus favors ${favoriteProbability >= 0.5 ? "the projected winner" : "the opponent"} at ${Math.round(favoriteProbability * 100)}%.`);
   }
-  if (bookCount >= 3) factors.push("Cross-book depth supports a moderate-or-better market confidence grade.");
+  if (bookCount >= 3) factors.push("Book depth describes market coverage, not calibrated prediction confidence.");
   if (row.status === "live") factors.push("Game is live; prices and probabilities can move quickly.");
   if (factors.length === 0) factors.push("No verified moneyline market is available yet; Runner is withholding a directional claim.");
   return factors;

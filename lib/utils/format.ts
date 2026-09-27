@@ -1,4 +1,5 @@
 export function formatOdds(odds: number): string {
+  if (!Number.isFinite(odds) || odds === 0) return "—";
   return odds > 0 ? `+${odds}` : `${odds}`;
 }
 
@@ -17,7 +18,8 @@ export function formatMoney(value: number): string {
   }).format(value);
 }
 
-export function formatPercent(value: number, fractionDigits = 1): string {
+export function formatPercent(value: number | null | undefined, fractionDigits = 1): string {
+  if (value == null || !Number.isFinite(value)) return "Unavailable";
   return `${(value * 100).toFixed(fractionDigits)}%`;
 }
 

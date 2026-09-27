@@ -151,7 +151,10 @@ function extractBookOdds(bookmaker: OddsApiBookmaker, homeTeam: string, awayTeam
   const snapshot: BookOddsSnapshot = {
     sportsbookKey: bookmaker.key,
     sportsbook: bookmaker.title,
-    capturedAt: bookmaker.last_update,
+    // Use the oldest constituent update so a refreshed different market cannot
+    // make an older main-market quote appear fresh.
+    capturedAt: [bookmaker.last_update, ...bookmaker.markets.filter((m) => ["h2h", "spreads", "totals"].includes(m.key)).map((m) => m.last_update ?? bookmaker.last_update)]
+      .sort((a, b) => Date.parse(a) - Date.parse(b))[0],
   };
 
   const h2h = bookmaker.markets.find((m) => m.key === "h2h");
@@ -245,7 +248,7 @@ export function mergeEventMarkets(game: MappedGame, derivativeBooks: BookOddsSna
     const existing = merged.get(derivative.sportsbookKey);
     if (existing) {
       existing.markets = derivative.markets;
-      existing.capturedAt = existing.capturedAt > derivative.capturedAt ? existing.capturedAt : derivative.capturedAt;
+      // Derivative timestamps live on each market; retain main-price timestamp.
     } else {
       merged.set(derivative.sportsbookKey, derivative);
     }
@@ -368,8 +371,8 @@ export async function fetchEventPlayerProps(
 
       for (const [playerName, outcomes] of outcomesByPlayer) {
         const over = outcomes.find((outcome) => outcome.name.toLowerCase() === "over");
-        const under = outcomes.find((outcome) => outcome.name.toLowerCase() === "under");
-        if (!over || !under || typeof over.point !== "number") continue;
+        const under = outcomes.find((outcome) => outcome.name.toLowerCase() === "under" && outcome.point === over?.point);
+        if (!over || !under || !isPoint(over.point) || !isAmericanPrice(over.price) || !isAmericanPrice(under.price)) continue;
 
         const playerSlug = playerName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
         const mapKey = `${market.key}:${playerSlug}`;

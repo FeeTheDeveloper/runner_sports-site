@@ -1,6 +1,11 @@
 # Access Control QA — What The Code Actually Enforces Today
 
-This document reflects only what `middleware.ts` and `lib/auth/access.ts`
+> 2026-09-26 follow-up: tracker owner/auth enforcement and verified-email grant
+> checks are now implemented locally. The historical tracker exposure below is
+> repaired in code, but the ownership migration and live two-account acceptance
+> remain release gates. See [security release gates](SECURITY_RELEASE_GATES_2026-09-26.md).
+
+This historical document reflects only what `middleware.ts` and `lib/auth/access.ts`
 actually do, as read on `release/runner-production` during this QA pass.
 **Neither file was modified during this pass** — both are read-only inputs
 here, per the hard constraint that the auth/entitlement system stays

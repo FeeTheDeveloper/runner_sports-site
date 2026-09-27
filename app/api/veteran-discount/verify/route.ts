@@ -2,7 +2,8 @@ import { clerkClient } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
-import { getStripe, isStripeConfigured } from "@/lib/stripe/server";
+import { getVerifiedBillingStripe, isStripeBillingConfigured } from "@/lib/stripe/server";
+import { getBillingSubscriptions, isActiveSubscription } from "@/lib/billing/subscriptions";
 import { getVeteranCouponId } from "@/lib/billing/veteranDiscount";
 
 // Callback invoked by Hutchrok Group Solutions once their custom veteran
@@ -50,12 +51,16 @@ export async function POST(request: Request) {
 
   if (decision === "approved") {
     const clerk = await clerkClient();
-    const user = await clerk.users.getUser(record.clerk_user_id);
-    const stripeSubscriptionId = (user.privateMetadata as Record<string, unknown>).stripeSubscriptionId;
+    const subscriptions = await getBillingSubscriptions(record.clerk_user_id);
+    const activeSubscriptions = subscriptions.filter(subscription => isActiveSubscription(subscription));
     const couponId = getVeteranCouponId();
 
-    if (isStripeConfigured() && couponId && typeof stripeSubscriptionId === "string") {
-      await getStripe().subscriptions.update(stripeSubscriptionId, { discounts: [{ coupon: couponId }] });
+    if (isStripeBillingConfigured() && couponId && activeSubscriptions.length === 1) {
+      const stripe = await getVerifiedBillingStripe();
+      const subscription = await stripe.subscriptions.retrieve(activeSubscriptions[0].stripe_subscription_id);
+      const customerId = typeof subscription.customer === "string" ? subscription.customer : subscription.customer.id;
+      if (customerId !== activeSubscriptions[0].stripe_customer_id) return NextResponse.json({ error: "Subscription ownership mismatch." }, { status: 409 });
+      await stripe.subscriptions.update(subscription.id, { discounts: [{ coupon: couponId }] }, { idempotencyKey: `runner:veteran:${requestId}:approve` });
       couponApplied = true;
     }
 
