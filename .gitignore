@@ -39,3 +39,5 @@ next-env.d.ts
 
 # disposable local verification artifacts
 /.ai/local/
+
+.env*
