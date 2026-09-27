@@ -58,7 +58,7 @@ All endpoints return JSON as `{ data, meta? }`; missing resources return a struc
 
 | Endpoint | Filters |
 |---------|---------|
-| `GET /api/health` | None |
+| `GET /api/health` | None (reports Clerk configuration state only, no key material) |
 | `GET /api/sports` | None |
 | `GET /api/sports/:id` | None |
 | `GET /api/games` | `sport`, `league`, `status`, `limit`, `offset` |

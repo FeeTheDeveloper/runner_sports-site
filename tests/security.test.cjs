@@ -24,7 +24,7 @@ function loader(stubs) {
       if (name.startsWith('@/')) return load(name.slice(2) + '.ts');
       return require(name);
     };
-    vm.runInNewContext(code, { require: injectedRequire, module, exports: module.exports, process, Date, Response, URL, console }, { filename: file });
+    vm.runInNewContext(code, { require: injectedRequire, module, exports: module.exports, process, Date, Response, URL, console, atob }, { filename: file });
     return module.exports;
   }
   return load;
@@ -171,5 +171,51 @@ test('email-based admin and manual grants require a verified primary address and
   } finally {
     if (previous === undefined) delete process.env.RUNNER_ADMIN_BOOTSTRAP_EMAILS;
     else process.env.RUNNER_ADMIN_BOOTSTRAP_EMAILS = previous;
+  }
+});
+
+test('a failing Clerk identity lookup degrades to public access instead of crashing the layout', async () => {
+  const errors = [];
+  const accessModule = loader({
+    '@clerk/nextjs/server': { currentUser: async () => { throw Object.assign(new Error('sk_live_must_not_be_logged'), { name: 'ClerkAPIResponseError' }); } },
+    '@/lib/auth/config': { isClerkConfigured: () => true },
+    '@/lib/supabase/server': { getSupabaseServerClient: () => { throw new Error('database must not be reached'); } },
+  })('lib/auth/access.ts');
+  const originalError = console.error;
+  console.error = (...args) => errors.push(args.join(' '));
+  try {
+    const access = await accessModule.getRunnerAccess();
+    assert.equal(access.authenticated, false);
+    assert.equal(access.fullAccess, false);
+    assert.equal(access.isAdmin, false);
+  } finally {
+    console.error = originalError;
+  }
+  assert.deepEqual(errors, ['Runner identity lookup failed ClerkAPIResponseError']);
+});
+
+test('health reports the Clerk configuration state without key material', async () => {
+  const synthetic = {
+    NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: 'pk_test_' + Buffer.from('runner-test.clerk.accounts.dev$').toString('base64'),
+    CLERK_SECRET_KEY: 'sk_test_synthetic_fixture',
+    CLERK_EXPECTED_FRONTEND_API: 'runner-test.clerk.accounts.dev',
+  };
+  const previous = Object.fromEntries(Object.keys(synthetic).map(key => [key, process.env[key]]));
+  const health = () => loader({
+    'next/server': { NextResponse: { json: body => body } },
+  })('app/api/health/route.ts').GET();
+  try {
+    for (const key of Object.keys(synthetic)) delete process.env[key];
+    assert.equal((await health()).data.identity, 'missing');
+    Object.assign(process.env, synthetic);
+    const body = await health();
+    assert.equal(body.data.identity, 'configured');
+    const serialized = JSON.stringify(body);
+    for (const value of Object.values(synthetic)) assert.ok(!serialized.includes(value));
+  } finally {
+    for (const [key, value] of Object.entries(previous)) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
   }
 });

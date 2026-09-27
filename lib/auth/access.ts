@@ -99,7 +99,14 @@ async function findActiveManualGrant(userId: string, email: string | null): Prom
 export async function getRunnerAccess(): Promise<RunnerAccess> {
   if (!isClerkConfigured()) return NO_ACCESS;
 
-  const user = await currentUser();
+  // A Clerk API failure (for example a secret key issued by a different
+  // instance than the publishable key) must not crash the root layout for
+  // every page. Degrade to public access and log only the error class.
+  const user = await currentUser().catch((error: unknown) => {
+    const name = (error as { name?: unknown } | null)?.name;
+    console.error("Runner identity lookup failed", typeof name === "string" ? name : "UnknownError");
+    return null;
+  });
   if (!user) return NO_ACCESS;
 
   const userId = user.id;
