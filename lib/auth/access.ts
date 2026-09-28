@@ -4,8 +4,9 @@ import { isClerkConfigured } from "@/lib/auth/config";
 import { getSupabaseServerClient } from "@/lib/supabase/server";
 import { getBillingSubscriptions, isActiveSubscription } from "@/lib/billing/subscriptions";
 import { planRank, type PaidPlanId } from "@/lib/billing/plans";
+import { isOwnerEmail } from "@/lib/auth/owner";
 
-export type RunnerRole = "public" | "authenticated" | "subscriber" | "admin";
+export type RunnerRole = "public" | "authenticated" | "subscriber" | "admin" | "owner";
 export type RunnerEntitlement =
   | "none"
   | "free"
@@ -15,8 +16,9 @@ export type RunnerEntitlement =
   | "past_due"
   | "canceled"
   | "suspended"
-  | "admin";
-export type RunnerAccessSource = "stripe" | "admin" | "manual" | "none";
+  | "admin"
+  | "owner";
+export type RunnerAccessSource = "stripe" | "admin" | "manual" | "owner" | "none";
 
 export interface RunnerAccess {
   authenticated: boolean;
@@ -28,6 +30,8 @@ export interface RunnerAccess {
   expiresAt: string | null;
   fullAccess: boolean;
   isAdmin: boolean;
+  /** The single owner account. Implies isAdmin and permanent fullAccess. */
+  isOwner: boolean;
   paidPlan: PaidPlanId | null;
   billingState: "not_connected" | "synced" | "unavailable";
 }
@@ -42,6 +46,7 @@ const NO_ACCESS: RunnerAccess = {
   expiresAt: null,
   fullAccess: false,
   isAdmin: false,
+  isOwner: false,
   paidPlan: null,
   billingState: "not_connected",
 };
@@ -108,6 +113,25 @@ export async function getRunnerAccess(): Promise<RunnerAccess> {
     : null;
   const meta = (user.privateMetadata ?? {}) as Record<string, unknown>;
 
+  // The owner outranks every other tier and is checked first, so no billing
+  // state, grant expiry or metadata edit can reduce this account's access.
+  if (isOwnerEmail(email)) {
+    return {
+      authenticated: true,
+      userId,
+      email,
+      role: "owner",
+      entitlement: "owner",
+      source: "owner",
+      expiresAt: null,
+      fullAccess: true,
+      isAdmin: true,
+      isOwner: true,
+      paidPlan: null,
+      billingState: "not_connected",
+    };
+  }
+
   const isBootstrapAdmin = email ? adminBootstrapEmails().includes(email.toLowerCase()) : false;
   const isMetaAdmin = meta.role === "admin";
 
@@ -122,6 +146,7 @@ export async function getRunnerAccess(): Promise<RunnerAccess> {
       expiresAt: null,
       fullAccess: true,
       isAdmin: true,
+      isOwner: false,
       paidPlan: null,
       billingState: "not_connected",
     };
@@ -142,6 +167,7 @@ export async function getRunnerAccess(): Promise<RunnerAccess> {
       expiresAt: activeSubscription.period_end,
       fullAccess: true,
       isAdmin: false,
+      isOwner: false,
       paidPlan: activeSubscription.plan,
       billingState: "synced",
     };
@@ -159,6 +185,7 @@ export async function getRunnerAccess(): Promise<RunnerAccess> {
       expiresAt: manualGrant.expires_at,
       fullAccess: true,
       isAdmin: false,
+      isOwner: false,
       paidPlan: null,
       billingState: billing.unavailable ? "unavailable" : "synced",
     };
@@ -174,6 +201,7 @@ export async function getRunnerAccess(): Promise<RunnerAccess> {
     expiresAt: null,
     fullAccess: false,
     isAdmin: false,
+    isOwner: false,
     paidPlan: null,
     billingState: billing.unavailable ? "unavailable" : billing.rows.length ? "synced" : "not_connected",
   };

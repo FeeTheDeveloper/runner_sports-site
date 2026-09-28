@@ -1,5 +1,9 @@
 # Access Control QA — What The Code Actually Enforces Today
 
+> 2026-09-28 follow-up: a permanent single-account **owner** tier now resolves
+> ahead of admin, Stripe and manual grants, so the ordering listed below is
+> historical from this date. See [Runner owner access](RUNNER_OWNER_ACCESS.md).
+
 > 2026-09-26 follow-up: tracker owner/auth enforcement and verified-email grant
 > checks are now implemented locally. The historical tracker exposure below is
 > repaired in code, but the ownership migration and live two-account acceptance

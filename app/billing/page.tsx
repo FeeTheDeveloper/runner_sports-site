@@ -9,8 +9,10 @@ import { isStripeBillingConfigured } from "@/lib/stripe/server";
 
 export default async function BillingPage() {
   const access = await getRunnerAccess();
-  const plan = access.paidPlan ? PAID_PLANS[access.paidPlan].name : "No active paid plan";
-  const statusLabels = { none: "Not signed in", free: "Free access", active: "Active", manual_access: "Complimentary access", trial: "Trial", past_due: "Payment needed", canceled: "Canceled", suspended: "Suspended", admin: "Administrator" };
+  // The owner holds permanent access without a Stripe subscription, so the
+  // access level must not read as "no plan" and must not imply a paid one.
+  const plan = access.isOwner ? "Runner Owner" : access.paidPlan ? PAID_PLANS[access.paidPlan].name : "No active paid plan";
+  const statusLabels = { none: "Not signed in", free: "Free access", active: "Active", manual_access: "Complimentary access", trial: "Trial", past_due: "Payment needed", canceled: "Canceled", suspended: "Suspended", admin: "Administrator", owner: "Permanent access" };
   const status = access.billingState === "unavailable" ? "Billing temporarily unavailable" : statusLabels[access.entitlement];
   const hasCustomer = access.userId ? Boolean(await getBillingCustomer(access.userId).catch(() => null)) : false;
 

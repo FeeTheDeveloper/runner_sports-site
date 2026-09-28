@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "node --test tests/security.test.cjs tests/market-truth.test.cjs tests/billing.test.cjs tests/billing-db.test.cjs tests/auth-config.test.cjs tests/operations.test.cjs tests/runner-freshness.test.cjs tests/game-day-skins.test.cjs",
+    "test": "node --test tests/security.test.cjs tests/market-truth.test.cjs tests/billing.test.cjs tests/billing-db.test.cjs tests/auth-config.test.cjs tests/owner-access.test.cjs tests/operations.test.cjs tests/runner-freshness.test.cjs tests/game-day-skins.test.cjs",
     "stripe:check": "node scripts/check-stripe-config.mjs"
   },
   "dependencies": {
