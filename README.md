@@ -2,6 +2,8 @@
 
 A Next.js 15 / TypeScript sports analytics and tracking platform.
 
+[Portfolio evidence and truth boundary](docs/PORTFOLIO_CASE_STUDY.md)
+
 ## Structure
 
 ```
