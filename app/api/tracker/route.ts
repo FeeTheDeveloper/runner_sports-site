@@ -2,14 +2,18 @@ import type { NextRequest } from "next/server";
 import type { BetResult } from "@/types";
 import { badRequest, filterValue, ok, paginate } from "@/lib/api/response";
 import { addTrackedBet, getTrackedBets, type NewTrackedBet } from "@/lib/data/tracker";
+import { authorizeTrackerRequest } from "./auth";
 
 export const revalidate = 0;
 
 const VALID_RESULTS: BetResult[] = ["win", "loss", "push", "pending"];
 
 export async function GET(request: NextRequest) {
+  const auth = await authorizeTrackerRequest();
+  if (auth instanceof Response) return auth;
+
   const params = request.nextUrl.searchParams;
-  const bets = (await getTrackedBets()).filter((bet) =>
+  const bets = (await getTrackedBets(auth.ownerId)).filter((bet) =>
     filterValue(bet.sport, params.get("sport")) && filterValue(bet.result, params.get("result")),
   );
   const result = paginate(bets, params);
@@ -17,6 +21,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const auth = await authorizeTrackerRequest();
+  if (auth instanceof Response) return auth;
+
   const body = await request.json().catch(() => null);
   if (!body || typeof body !== "object") {
     return badRequest("Request body must be a JSON object");
@@ -57,6 +64,6 @@ export async function POST(request: NextRequest) {
     clv: typeof clv === "number" ? clv : undefined,
   };
 
-  const bet = await addTrackedBet(payload);
+  const bet = await addTrackedBet(auth.ownerId, payload);
   return ok(bet);
 }

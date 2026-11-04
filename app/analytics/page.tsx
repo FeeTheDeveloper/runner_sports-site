@@ -1,4 +1,4 @@
-import { getTrackedBets, getTrackerSummary } from "@/lib/data/tracker";
+import { getTrackedBets, summarizeTrackedBets } from "@/lib/data/tracker";
 import StatCard from "@/components/dashboard/StatCard";
 import PerformanceChart from "@/components/charts/PerformanceChart";
 import Badge from "@/components/ui/Badge";
@@ -78,9 +78,10 @@ function strongestMarketInsight(bets: TrackedBet[]) {
 
 export default async function AnalyticsPage() {
   const access = await getRunnerAccess();
-  if (!access.fullAccess) return <Paywall feature="Trend Lab analytics" />;
+  if (!access.fullAccess || !access.userId) return <Paywall feature="Trend Lab analytics" />;
 
-  const [summary, bets] = await Promise.all([getTrackerSummary(), getTrackedBets()]);
+  const bets = await getTrackedBets(access.userId);
+  const summary = summarizeTrackedBets(bets);
   const breakdowns = sportBreakdown(bets);
   const { values, labels } = cumulativeProfitSeries(bets);
   const closingLine = closingLineInsight(bets);

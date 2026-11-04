@@ -24,14 +24,14 @@ const confidenceScore = { high: 1, moderate: 0.66, low: 0.33 } as const;
 
 export default async function DashboardPage() {
   const access = await getRunnerAccess();
-  if (!access.fullAccess) return <Paywall feature="The executive dashboard" />;
+  if (!access.fullAccess || !access.userId) return <Paywall feature="The executive dashboard" />;
 
   const [games, props, edges, signals, tracker] = await Promise.all([
     getGames(),
     getProps(),
     getEdges(),
     getMarketSignals(),
-    getTrackerSummary(),
+    getTrackerSummary(access.userId),
   ]);
 
   const upcomingGames = games.filter((g) => g.status !== "final").slice(0, 4);

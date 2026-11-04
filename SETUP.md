@@ -9,6 +9,8 @@ organization, billing information, and credentials in the deployment environment
   `tracked_bets`, all with row-level security enabled and no policies — meaning only the **service role** key can
   read/write them right now; the anon key has no access until this app grows client-side/user-scoped features).
 - Apply `supabase/migrations/20260903043224_prediction_market_intelligence.sql` for prediction-market storage.
+- Apply `supabase/migrations/20261104000000_tracked_bets_ownership.sql` (adds per-user `clerk_user_id` ownership to
+  `tracked_bets`; existing rows are kept with no owner and are hidden until an admin assigns them).
 - Apply `supabase/migrations/20260921000000_runner_performance_ledger_v1.sql` for the Runner Performance Ledger
   (`runner_import_runs`, `runner_bets`, `runner_bet_legs`, and their summary views) that backs `/performance` and
   `/api/performance/*` — required only if you use the Juice Reel CSV import.
