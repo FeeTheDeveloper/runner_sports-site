@@ -1,5 +1,7 @@
 # Runner MCP Control Plane
 
+> **Reference only — superseded as product policy.** Governing scope is [docs/replacement/RUNNER_REPLACEMENT_DIRECTIVE.md](./replacement/RUNNER_REPLACEMENT_DIRECTIVE.md) (2026-11-03). This file still describes running infrastructure; see [SUPERSESSION_MAP.md](./replacement/SUPERSESSION_MAP.md).
+
 The MCP route retains the existing read-only `search`, `fetch`,
 `get_best_plays`, and `run_matchup_analysis` tools. It also exposes bounded
 Runner read tools for status, live intelligence, signals, totals, pick health,

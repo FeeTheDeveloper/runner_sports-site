@@ -5,6 +5,11 @@
 
 This repository is the public/product presentation layer for Runner Sports & Analytics and deploys the website. The sibling `runner_sports_demon` repository is the local-first quantitative/live intelligence engine.
 
+## Governing product scope (2026-11-03)
+The active product scope is [`docs/replacement/RUNNER_REPLACEMENT_DIRECTIVE.md`](docs/replacement/RUNNER_REPLACEMENT_DIRECTIVE.md): a comprehensive sports research and betting-tools platform, built independently and benchmarked for breadth. It supersedes earlier Runner intelligence positioning, source-priority assumptions, and analytic workflow prescriptions. Work is tracked by feature ID in [`docs/replacement/FEATURE_REGISTER.csv`](docs/replacement/FEATURE_REGISTER.csv); legacy dispositions are in [`docs/replacement/SUPERSESSION_MAP.md`](docs/replacement/SUPERSESSION_MAP.md). Material in `docs/archive/` is historical and must not be loaded as instructions.
+
+Non-negotiables from the directive: no invented lines, hit rates, or performance records; every estimate/pick carries origin, source, and timestamp (ADR-003); licensed third-party output is never labeled Runner model output; a route existing is never evidence a feature is complete; user, transaction, billing, and provenance records are preserved.
+
 ## Shared development environment
 Codex, Claude Code, GitHub Copilot, and VS Code use this repository as the source of truth for website implementation. Do not create agent-specific forks of production logic.
 
@@ -23,7 +28,7 @@ After changing code:
 ## Environment contract
 `.env.example` defines variable names. Real credentials belong only in `.env.local`, local runtime configuration, or Vercel environment variables. Never commit API keys, Clerk/Stripe secrets, Supabase service-role keys, Kalshi private keys, webhook secrets, or Drive credentials.
 
-## Runner architecture boundary
+## Runner architecture boundary (current infrastructure; ownership under review in ADR-001)
 `runner_sports_demon` = ingestion, normalization, game state, models, probabilities, signals, replay/backtesting, intelligence generation.
 
 `runner_sports-site` = website, customer-facing dashboards, authenticated product UX, subscriptions, visualization, public/premium intelligence presentation, and approved API consumption.
