@@ -1,5 +1,7 @@
 # Runner Integration Contract
 
+> **Reference only — superseded as product policy.** Governing scope is [docs/replacement/RUNNER_REPLACEMENT_DIRECTIVE.md](./replacement/RUNNER_REPLACEMENT_DIRECTIVE.md) (2026-11-03). This file still describes running infrastructure; see [SUPERSESSION_MAP.md](./replacement/SUPERSESSION_MAP.md).
+
 The Runner Sports site is the presentation and access layer. The sibling
 `runner_sports_demon` owns ingestion, normalization, models, replay, and
 intelligence generation.

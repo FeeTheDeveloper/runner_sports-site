@@ -4,6 +4,9 @@ A Next.js 15 / TypeScript sports analytics and tracking platform.
 
 [Portfolio evidence and truth boundary](docs/PORTFOLIO_CASE_STUDY.md)
 
+**Active product scope:** [Runner Replacement Program](docs/replacement/README.md) — owner directive (2026-11-03),
+feature register, supersession map, dependency register, and migration manifest.
+
 ## Structure
 
 ```

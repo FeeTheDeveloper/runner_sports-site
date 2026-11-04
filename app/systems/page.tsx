@@ -1,18 +1,72 @@
 import ProductHeading from "@/components/ui/ProductHeading";
-import FilterBar from "@/components/ui/FilterBar";
+import EmptyState from "@/components/ui/EmptyState";
+import DataStatusBadge from "@/components/ui/DataStatusBadge";
 import { getRunnerAccess } from "@/lib/auth/access";
 import Paywall from "@/components/auth/Paywall";
 
-const systems = [
-  ["Home favorites after consecutive road losses", "NBA", "81-46", "+29.8", "11.6%", "63.8%", "3"],
-  ["Road underdogs with a rest advantage", "MLB", "142-109", "+21.4", "8.5%", "56.6%", "6"],
-  ["Divisional unders after overtime", "NFL", "34-18", "+13.2", "12.7%", "65.4%", "1"],
-  ["Home teams versus travel fatigue", "NHL", "97-62", "+18.7", "7.4%", "61.0%", "4"],
-];
+// Systems research (feature register: SYS-*) requires a historical evaluation
+// engine with leakage controls and time-separated evaluation. Until that engine
+// publishes verified results, this page must not render system records, units,
+// ROI, or win rates. Previously this page shipped illustrative rows; those were
+// removed under the Intelligence Replacement Directive (docs/replacement/).
 
-export default async function SystemsPage({ searchParams }: { searchParams: Promise<{ sport?: string }> }) { const access = await getRunnerAccess(); if (!access.fullAccess) return <Paywall feature="System Finder" />; const { sport } = await searchParams; const visibleSystems = sport ? systems.filter((row) => row[1].toLowerCase() === sport) : systems; return <div className="space-y-7"><ProductHeading eyebrow="System Finder" title="Find The Pattern" description="Discover, validate, and monitor repeatable sports-market situations. Published systems require sample size, backtest period, drawdown, and current qualifiers." />
-  <div className="data-panel p-5"><p className="text-xs font-bold text-text">Ask Runner AI to find a system <span className="ml-2 rounded-full border border-dashed border-border px-2 py-0.5 text-[9px] font-black normal-case tracking-normal text-text-subtle">Coming soon</span></p><div className="mt-3 flex gap-2" title="Coming soon"><input disabled className="min-w-0 flex-1 cursor-not-allowed rounded-lg border border-border bg-canvas px-4 py-3 text-sm text-text-subtle outline-none" placeholder="NBA home favorites after consecutive road losses" aria-label="System query"/><button type="button" disabled aria-disabled="true" className="cursor-not-allowed rounded-lg bg-accent px-5 py-3 text-xs font-black text-white opacity-60">RUN TEST</button></div><div className="mt-3 flex flex-wrap gap-2">{["Home favorites","Back-to-back","Road underdogs","Rest advantage","Division games"].map(x=><button key={x} type="button" disabled aria-disabled="true" title="Coming soon" className="cursor-not-allowed rounded-full border border-border px-3 py-1 text-[10px] text-text-subtle opacity-60">{x}</button>)}</div></div>
-  <FilterBar sports={["MLB","NFL","NCAAF","NBA","WNBA","NHL"]} showDate={false} showSearch={false}/>
-  <div className="overflow-x-auto rounded-xl border border-border"><table className="w-full min-w-[880px] border-collapse bg-surface text-left text-xs"><thead className="bg-surface-2 text-[10px] uppercase tracking-widest text-text-subtle"><tr>{["Rank","System","Sport","Record","Units","ROI","Win %","Picks"].map(x=><th key={x} className="px-4 py-3">{x}</th>)}</tr></thead><tbody>{visibleSystems.map((row,i)=><tr key={row[0]} className="border-t border-border hover:bg-surface-2"><td className="px-4 py-4 font-mono text-text-subtle">#{i+1}</td><td className="px-4 py-4"><p className="font-bold text-text">{row[0]}</p><p className="mt-1 text-[10px] text-text-subtle">Backtest · sample confidence · CLV tracked</p></td><td className="px-4 py-4 font-bold text-analytics">{row[1]}</td><td className="px-4 py-4 font-mono text-text">{row[2]}</td><td className="px-4 py-4 font-mono text-positive">{row[3]}</td><td className="px-4 py-4 font-mono text-positive">{row[4]}</td><td className="px-4 py-4 font-mono text-text">{row[5]}</td><td className="px-4 py-4"><span className="rounded-full bg-accent/10 px-2 py-1 font-bold text-accent">{row[6]} live</span></td></tr>)}</tbody></table></div>
-  <p className="text-xs leading-5 text-text-subtle">System rows shown here demonstrate the approved product experience. They are not published betting claims and will be replaced by verified backtest outputs when the historical engine is connected.</p>
-  </div>; }
+// Access is per-request (Clerk); never prerender the paywall decision.
+export const dynamic = "force-dynamic";
+
+const columns = ["Rank", "System", "Sport", "Record", "Units", "ROI", "Win %", "Qualifiers"];
+
+export default async function SystemsPage() {
+  const access = await getRunnerAccess();
+  if (!access.fullAccess) return <Paywall feature="System Finder" />;
+
+  return (
+    <div className="space-y-7">
+      <ProductHeading
+        eyebrow="System Finder"
+        title="Find The Pattern"
+        description="Discover, validate, and monitor repeatable sports-market situations. Published systems require sample size, backtest period, drawdown, and current qualifiers."
+      />
+
+      <div className="data-panel p-5">
+        <p className="text-xs font-bold text-text">
+          Ask Runner AI to find a system{" "}
+          <span className="ml-2 rounded-full border border-dashed border-border px-2 py-0.5 text-[9px] font-black normal-case tracking-normal text-text-muted">
+            Coming soon
+          </span>
+        </p>
+        <div className="mt-3 flex gap-2" title="Coming soon">
+          <input
+            disabled
+            className="min-w-0 flex-1 cursor-not-allowed rounded-lg border border-border bg-canvas px-4 py-3 text-sm text-text-subtle outline-none"
+            placeholder="NBA home favorites after consecutive road losses"
+            aria-label="System query"
+          />
+          <button
+            type="button"
+            disabled
+            aria-disabled="true"
+            className="cursor-not-allowed rounded-lg bg-accent px-5 py-3 text-xs font-black text-white opacity-60"
+          >
+            RUN TEST
+          </button>
+        </div>
+      </div>
+
+      <section aria-labelledby="systems-results" className="space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <h2 id="systems-results" className="text-xs font-bold uppercase tracking-widest text-text-muted">
+            Published systems
+          </h2>
+          <DataStatusBadge tone="warning" label="Historical engine not connected" />
+        </div>
+        <p className="text-xs text-text-muted">
+          Result columns when available: {columns.join(" · ")}.
+        </p>
+        <EmptyState
+          title="No verified systems published yet"
+          description="System records, units, ROI, and win rates appear only after the historical evaluation engine publishes time-separated, leakage-controlled results. Nothing is shown until then."
+        />
+      </section>
+    </div>
+  );
+}
