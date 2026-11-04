@@ -19,10 +19,10 @@ active instruction source.
 | Stage | State |
 |---|---|
 | Planned | Directive, supersession map, feature register v0.1, dependency register, migration manifest, ADRs committed |
-| Built | `/systems` fabricated system records removed (data-honesty fix). No replacement features built yet. |
+| Built | `/systems` fabricated system records removed (data-honesty fix). SEC-01 per-user tracker ownership (PR #28). Runner plugin 0.2.0 on the directive (`runner_sports_demon` PR #29). No replacement product features built yet. |
 | Verified | None |
 | Deployed | None |
 
 ## Open security findings
-SEC-01 (unauthenticated `/api/tracker` read/write) and SEC-02 (premium read APIs not entitlement-gated) — see
+SEC-01 (unauthenticated `/api/tracker` read/write — fix in PR #28) and SEC-02 (premium read APIs not entitlement-gated) — see
 [SUPERSESSION_MAP.md §D](./SUPERSESSION_MAP.md#d-security-findings-surfaced-during-inventory).

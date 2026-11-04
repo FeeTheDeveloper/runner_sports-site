@@ -77,14 +77,14 @@ No notification producers exist in this repo (no email/push/alert jobs found) �
 
 ### A5. Data stores (Supabase migrations) — see [MIGRATION_MANIFEST.md](./MIGRATION_MANIFEST.md)
 
-## B. `runner_sports_demon` (read-only inventory; not modified — no push access in this session)
+## B. `runner_sports_demon` (changes in `runner_sports_demon` PR #29)
 
 | Surface | Count | Disposition |
 |---|---|---|
-| `plugin/runner-sports-analytics/` (canonical source of the installed Claude plugin, v0.1.0; skills `intelligence-desk`, `slate-research`, `live-desk`, `media-research`, `engineering-handoff`, `campaign-director`; lock `RUNNER-GPT-LOCK-20260925-V1`; `RSA_Go_Live_Plan.md`) | 6 skills + refs | **REWRITE** (directive step 6). `intelligence-desk` lock and go-live plan → ARCHIVE; `engineering-handoff`, `campaign-director` → RETAIN-MAPPED after edit; `slate-research`/`live-desk`/`media-research` → re-map to RSC-*, ODD-007, MED-*. **Blocked:** needs push access to the Demon repo and plugin re-publication. |
-| `.github/prompts/*.prompt.md` (Copilot) | 27 | REWRITE — `runner-*` intelligence prompts (slate, pregame, live, halftime, totals, team-total, props, best, verse, calibrate…) → ARCHIVE; generic `audit-repo`, `debug-runtime`, `implement-feature`, `verify-release` → RETAIN-MAPPED. |
-| `.github/agents/*.agent.md` (Copilot) | 18 | REWRITE — intelligence personas (totals-specialist, game-flow-analyst, verse-historian, market-intelligence…) → ARCHIVE; `debugger`, `qa-release`, `data-pipeline` → RETAIN-MAPPED. |
-| `.github/copilot-instructions.md` | 1 | REWRITE from the directive. |
+| `plugin/runner-sports-analytics/` (canonical source of the installed Claude plugin, v0.1.0; skills `intelligence-desk`, `slate-research`, `live-desk`, `media-research`, `engineering-handoff`, `campaign-director`; lock `RUNNER-GPT-LOCK-20260925-V1`; `RSA_Go_Live_Plan.md`) | 7 skills + refs | **REWRITE — done in `runner_sports_demon` PR #29 (plugin 0.2.0).** Lock and go-live plan archived to `archive/legacy-intelligence/plugin-0.1.1/`; all skills re-pointed to the directive. Remaining: merge, then re-upload the package to the Claude account. |
+| `.github/prompts/*.prompt.md` (Copilot) | 27 | Directive now overrides via `copilot-instructions.md` (PR #29). ARCHIVE at cutover with `.runner/command-registry.json` — `runner-*` intelligence prompts (slate, pregame, live, halftime, totals, team-total, props, best, verse, calibrate…) → ARCHIVE; generic `audit-repo`, `debug-runtime`, `implement-feature`, `verify-release` → RETAIN-MAPPED. |
+| `.github/agents/*.agent.md` (Copilot) | 18 | Directive now overrides via `copilot-instructions.md` (PR #29). ARCHIVE at cutover — intelligence personas (totals-specialist, game-flow-analyst, verse-historian, market-intelligence…) → ARCHIVE; `debugger`, `qa-release`, `data-pipeline` → RETAIN-MAPPED. |
+| `.github/copilot-instructions.md` | 1 | **Done in PR #29** — governing-scope section added. |
 | Root policy docs (`RUNNER_INTELLIGENCE_STATE.md`, `RUNNER_RESEARCH_MEMORY.md`, `SIGNAL_REGISTRY.md`, `TOTALS_ENGINE.md`, `MODEL_NOTES.md`, `MODEL_REGISTRY.*`, `PROJECT_HANDOFF.md`, `VSCODE_AGENT_PLAYBOOK.md`, `ENTERPRISE_RESOURCE_CONTROL_PLANE.md`) | 9+ | ARCHIVE as policy; technical facts (`DATA_SCHEMA.md`, `DATA_SOURCES.md`, `DATA_SOURCE_REGISTRY.md`, `ARCHITECTURE.md`, `BACKTESTING.md`, `HISTORICAL_DATA_WORKFLOW.md`) → REFERENCE. |
 | `src/` engine (connectors odds-api/polymarket, normalization, state, models vig/probability/pregame, signals/divergence, totals, game-flow, adversity, publishing) | ~40 files | Infrastructure. RETAIN-MAPPED candidates for ODD-*, PRJ-*, OPS-*; each must pass the directive's evaluation bar before reuse. `publishing` → DISABLE-AT-CUTOVER for superseded `runner_*` outputs. |
 | `contracts/*.schema.json` | 10 | REFERENCE → basis for the Developer-platform data contracts (API-*). |
@@ -105,5 +105,5 @@ No notification producers exist in this repo (no email/push/alert jobs found) �
 
 | ID | Finding | Severity | Status |
 |---|---|---|---|
-| SEC-01 | `GET/POST /api/tracker`, `/api/tracker/[id]`, `/api/tracker/summary` have no authentication; middleware does not cover `/api/tracker`; `tracked_bets` has no owner column, and writes use the service-role client. Anyone can read or insert tracked bets. | High | **Open — not changed in this PR** (needs owner decision on who may write; see report). |
+| SEC-01 | `GET/POST /api/tracker`, `/api/tracker/[id]`, `/api/tracker/summary` have no authentication; middleware does not cover `/api/tracker`; `tracked_bets` has no owner column, and writes use the service-role client. Anyone can read or insert tracked bets. | High | **Fix in PR #28** — owner decision 2026-11-04: each signed-in user writes and sees only their own bets, with sportsbook sync as the target (TRK-001). |
 | SEC-02 | Read APIs for premium data (`/api/props`, `/api/edges`, `/api/signals`, `/api/runner/*`, etc.) are not entitlement-gated while the matching pages are paywalled. | Medium | Open — resolve with MEM-003 entitlement map. |
