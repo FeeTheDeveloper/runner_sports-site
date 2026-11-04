@@ -1,4 +1,4 @@
-import { getTrackedBets, getTrackerSummary } from "@/lib/data/tracker";
+import { getTrackedBets, summarizeTrackedBets } from "@/lib/data/tracker";
 import StatCard from "@/components/dashboard/StatCard";
 import SectionHeader from "@/components/ui/SectionHeader";
 import SportsTable from "@/components/ui/SportsTable";
@@ -37,9 +37,10 @@ function summarizeBySport(bets: TrackedBet[]) {
 
 export default async function TrackerPage() {
   const access = await getRunnerAccess();
-  if (!access.fullAccess) return <Paywall feature="The Runner Tracker" />;
+  if (!access.fullAccess || !access.userId) return <Paywall feature="The Runner Tracker" />;
 
-  const [bets, summary] = await Promise.all([getTrackedBets(), getTrackerSummary()]);
+  const bets = await getTrackedBets(access.userId);
+  const summary = summarizeTrackedBets(bets);
   const bySport = summarizeBySport(bets);
 
   return (
@@ -47,7 +48,7 @@ export default async function TrackerPage() {
       <div>
         <h1 className="text-xl font-semibold text-text">Bet Tracker</h1>
         <p className="mt-1 text-sm text-text-muted">
-          Live wager log backed by Supabase — log a bet via POST /api/tracker; this table starts empty until you do.
+          Your private wager log — only you can see these bets. Log one via POST /api/tracker while signed in; sportsbook sync is not connected yet.
         </p>
       </div>
 

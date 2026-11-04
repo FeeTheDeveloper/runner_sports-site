@@ -35,18 +35,38 @@ function mapRow(row: TrackedBetRow): TrackedBet {
   };
 }
 
-export async function getTrackedBets(): Promise<TrackedBet[]> {
+// Every function here is scoped to one owner (the Clerk user ID). There is
+// deliberately no unscoped read: callers must pass the authenticated user's ID
+// from getRunnerAccess(), never a value taken from the request.
+function requireOwner(ownerId: string): string {
+  if (!ownerId) throw new Error("tracker: ownerId is required");
+  return ownerId;
+}
+
+export async function getTrackedBets(ownerId: string): Promise<TrackedBet[]> {
   const supabase = getSupabaseServerClient();
   const { data, error } = await supabase
     .from("tracked_bets")
     .select("*")
+    .eq("clerk_user_id", requireOwner(ownerId))
     .order("bet_date", { ascending: false });
   if (error) throw error;
   return (data as unknown as TrackedBetRow[]).map(mapRow);
 }
 
-export async function getTrackerSummary(): Promise<TrackerSummary> {
-  const bets = await getTrackedBets();
+export async function getTrackedBet(ownerId: string, id: string): Promise<TrackedBet | null> {
+  const supabase = getSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("tracked_bets")
+    .select("*")
+    .eq("clerk_user_id", requireOwner(ownerId))
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? mapRow(data as unknown as TrackedBetRow) : null;
+}
+
+export function summarizeTrackedBets(bets: TrackedBet[]): TrackerSummary {
   const settled = bets.filter((b) => b.result !== "pending");
   const wins = settled.filter((b) => b.result === "win").length;
   const losses = settled.filter((b) => b.result === "loss").length;
@@ -98,7 +118,11 @@ function computeProfit(result: BetResult, odds: number, stake: number): number {
   return 0;
 }
 
-export async function addTrackedBet(input: NewTrackedBet): Promise<TrackedBet> {
+export async function getTrackerSummary(ownerId: string): Promise<TrackerSummary> {
+  return summarizeTrackedBets(await getTrackedBets(ownerId));
+}
+
+export async function addTrackedBet(ownerId: string, input: NewTrackedBet): Promise<TrackedBet> {
   const result = input.result ?? "pending";
   const profit = computeProfit(result, input.odds, input.stake);
 
@@ -106,6 +130,8 @@ export async function addTrackedBet(input: NewTrackedBet): Promise<TrackedBet> {
   const { data, error } = await supabase
     .from("tracked_bets")
     .insert({
+      clerk_user_id: requireOwner(ownerId),
+      source: "manual",
       bet_date: input.date,
       sport: input.sport,
       event: input.event,

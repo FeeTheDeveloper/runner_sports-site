@@ -83,10 +83,10 @@ All endpoints return JSON as `{ data, meta? }`; missing resources return a struc
 | `GET /api/runner/game-flow` | `sport`, `event`/`eventId`, `limit`, `maxAgeMinutes` |
 | `GET /api/runner/totals` | `sport`, `event`/`eventId`, `limit`, `maxAgeMinutes` |
 | `GET /api/runner/pick-health` | `sport`, `event`/`eventId`, `limit`, `maxAgeMinutes` |
-| `GET /api/tracker` | `sport`, `result`, `limit`, `offset` |
-| `POST /api/tracker` | Body: `{ date, sport, event, selection, market, sportsbook, odds, stake, result?, closingOdds?, clv? }` |
-| `GET /api/tracker/:id` | None |
-| `GET /api/tracker/summary` | None |
+| `GET /api/tracker` | Signed-in + active plan; returns only the caller's bets. `sport`, `result`, `limit`, `offset` |
+| `POST /api/tracker` | Signed-in + active plan; bet is owned by the caller. Body: `{ date, sport, event, selection, market, sportsbook, odds, stake, result?, closingOdds?, clv? }` |
+| `GET /api/tracker/:id` | Signed-in + active plan; another user's ID returns 404 |
+| `GET /api/tracker/summary` | Signed-in + active plan; caller's bets only |
 | `POST /api/performance/import` | Admin-only. Multipart form upload (`file`) of a Juice Reel CSV export; deduplicates and upserts into `runner_bets`/`runner_bet_legs` |
 | `GET /api/performance/summary` | Admin-only. Portfolio totals plus by-sportsbook/sport/league/market-type/leg-count/duration breakdowns |
 | `GET /api/performance/bets` | Admin-only. `sportsbook`, `result`, `limit`, `offset` |
